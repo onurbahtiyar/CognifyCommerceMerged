@@ -1,0 +1,118 @@
+<div class="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+  <div class="w-full max-w-2xl bg-surface rounded-xl shadow-xl p-8 sm:p-12 border border-gray-200">
+    
+    <div class="text-center mb-8">
+      <img src="assets/logo.png" alt="CognifyCommerce Logo" class="mx-auto h-14 w-auto mb-3" />
+      <h1 class="text-3xl font-bold text-accent">Kayıt Ol</h1>
+      <p class="text-sm text-gray-500 mt-1">Lütfen bilgilerinizi eksiksiz doldurun</p>
+      <p class="text-sm text-gray-500 mt-1">🔹 Kayıt olma şu an yalnızca BETA sürecinde aktiftir. Resmî yayında sınırlandırılabilir.</p>
+    </div>
+
+    <form (ngSubmit)="register()" class="grid grid-cols-1 sm:grid-cols-2 gap-5" novalidate>
+
+      <!-- Ad -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Ad</label>
+        <input [(ngModel)]="registerData.firstName" name="firstName" type="text"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" placeholder="Onur">
+      </div>
+
+      <!-- Soyad -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Soyad</label>
+        <input [(ngModel)]="registerData.lastName" name="lastName" type="text"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" placeholder="Bahtiyar">
+      </div>
+
+      <!-- E-posta -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-600 mb-1">E-posta</label>
+        <input [(ngModel)]="registerData.email" name="email" type="email"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" required>
+      </div>
+
+      <!-- Kullanıcı adı -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Kullanıcı Adı</label>
+        <input [(ngModel)]="registerData.username" name="username" type="text"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary">
+      </div>
+
+      <!-- Telefon -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Telefon</label>
+        <input [(ngModel)]="registerData.phoneNumber" name="phoneNumber" type="tel"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary">
+      </div>
+
+      <!-- Şifre -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Şifre</label>
+        <input [(ngModel)]="registerData.password" name="password" type="password"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" required>
+      </div>
+
+      <!-- Doğum Tarihi -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Doğum Tarihi</label>
+        <input [(ngModel)]="registerData.dateOfBirth" name="dateOfBirth" type="date"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary">
+      </div>
+
+      <!-- Cinsiyet -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Cinsiyet</label>
+        <select [(ngModel)]="registerData.gender" name="gender"
+          class="form-select w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary">
+          <option [ngValue]="undefined" disabled selected>Seçiniz</option>
+          <option [ngValue]="true">Erkek</option>
+          <option [ngValue]="false">Kadın</option>
+        </select>
+      </div>
+
+      <!-- Dil -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Tercih Edilen Dil</label>
+        <input [(ngModel)]="registerData.preferredLanguage" name="preferredLanguage" type="text"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" placeholder="tr">
+      </div>
+
+      <!-- Adres -->
+      <div class="sm:col-span-2">
+        <label class="block text-sm font-medium text-gray-600 mb-1">Adres</label>
+        <textarea [(ngModel)]="registerData.address" name="address" rows="2"
+          class="form-textarea w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"></textarea>
+      </div>
+
+      <!-- Ülke -->
+      <div>
+        <label class="block text-sm font-medium text-gray-600 mb-1">Ülke</label>
+        <input [(ngModel)]="registerData.country" name="country" type="text"
+          class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary" placeholder="Türkiye">
+      </div>
+
+      <!-- Kayıt Butonu -->
+      <div class="sm:col-span-2">
+        <button type="submit" [disabled]="loading"
+          class="w-full flex items-center justify-center py-2 px-4 bg-primary text-white rounded-md font-semibold hover:bg-primary-light disabled:opacity-50 transition">
+          <svg *ngIf="loading" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none"
+            viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>{{ loading ? 'Kayıt yapılıyor…' : 'Kayıt Ol' }}</span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Geri Bildirim -->
+    <div *ngIf="error" class="mt-6 text-center text-danger text-sm font-medium">
+      {{ error }}
+    </div>
+    <div *ngIf="success" class="mt-6 text-center text-success text-sm font-medium">
+      {{ success }}
+    </div>
+  </div>
+</div>
