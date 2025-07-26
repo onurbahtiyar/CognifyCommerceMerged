@@ -2,121 +2,197 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace Core.DataAccess.EntityFramework;
-
-public class EfEntityRepositoryBase<TEntity, TContext> : IEntityRepository<TEntity>
-    where TEntity : class, IEntity, new()
-    where TContext : DbContext
+namespace Core.DataAccess.EntityFramework
 {
-    private readonly TContext context;
-
-    public EfEntityRepositoryBase(TContext _context)
+    public class EfEntityRepositoryBase<TEntity, TContext> : IEntityRepository<TEntity>
+        where TEntity : class, IEntity, new()
+        where TContext : DbContext
     {
-        context = _context;
-    }
+        private readonly TContext _context;
 
-    public void Add(TEntity entitiy)
-    {
-        var addedEntity = context.Entry(entitiy);
-        addedEntity.State = EntityState.Added;
-        context.SaveChanges();
-    }
-
-    public void Delete(TEntity entitiy)
-    {
-        var deletedEntity = context.Entry(entitiy);
-        deletedEntity.State = EntityState.Deleted;
-        context.SaveChanges();
-    }
-
-    public TEntity Get(Expression<Func<TEntity, bool>> filter = null, params Expression<Func<TEntity, object>>[] includeProperties)
-    {
-        IQueryable<TEntity> query = context.Set<TEntity>();
-
-        if (includeProperties != null)
+        public EfEntityRepositoryBase(TContext context)
         {
-            foreach (var includeProperty in includeProperties)
-            {
-                query = query.Include(includeProperty);
-            }
+            _context = context;
         }
 
-        return query.FirstOrDefault(filter);
-    }
-
-    public List<TEntity> GetList(Expression<Func<TEntity, bool>> filter = null, params Expression<Func<TEntity, object>>[] includeProperties)
-    {
-        IQueryable<TEntity> query = context.Set<TEntity>();
-
-        if (includeProperties != null)
+        public void Add(TEntity entity)
         {
-            foreach (var includeProperty in includeProperties)
-            {
-                query = query.Include(includeProperty);
-            }
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Added;
+            _context.SaveChanges();
         }
 
-        return filter == null ? query.ToList() : query.Where(filter).ToList();
-    }
+        public async Task AddAsync(TEntity entity)
+        {
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Added;
+            await _context.SaveChangesAsync();
+        }
 
-    public void Update(TEntity entitiy)
-    {
-        var updatedEntity = context.Entry(entitiy);
-        updatedEntity.State = EntityState.Modified;
-        context.SaveChanges();
-    }
+        public void Update(TEntity entity)
+        {
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Modified;
+            _context.SaveChanges();
+        }
 
-    public async Task AddAsync(TEntity entity)
-    {
-        var addedEntity = context.Entry(entity);
-        addedEntity.State = EntityState.Added;
-        await context.SaveChangesAsync();
-    }
+        public async Task UpdateAsync(TEntity entity)
+        {
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Modified;
+            await _context.SaveChangesAsync();
+        }
 
-    public async Task UpdateAsync(TEntity entity)
-    {
-        var updatedEntity = context.Entry(entity);
-        updatedEntity.State = EntityState.Modified;
-        await context.SaveChangesAsync();
-    }
+        public void Delete(TEntity entity)
+        {
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Deleted;
+            _context.SaveChanges();
+        }
 
-    public async Task DeleteAsync(TEntity entity)
-    {
-        var deletedEntity = context.Entry(entity);
-        deletedEntity.State = EntityState.Deleted;
-        await context.SaveChangesAsync();
-    }
+        public async Task DeleteAsync(TEntity entity)
+        {
+            var entry = _context.Entry(entity);
+            entry.State = EntityState.Deleted;
+            await _context.SaveChangesAsync();
+        }
 
-    public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter = null)
-    {
-        return await context.Set<TEntity>().SingleOrDefaultAsync(filter);
-    }
+        public TEntity Get(
+            Expression<Func<TEntity, bool>> filter = null,
+            params Expression<Func<TEntity, object>>[] includeProperties)
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                    query = query.Include(include);
+            }
+            return filter == null
+                ? query.FirstOrDefault()
+                : query.FirstOrDefault(filter);
+        }
 
-    public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter = null)
-    {
-        return filter == null
-            ? await context.Set<TEntity>().ToListAsync()
-            : await context.Set<TEntity>().Where(filter).ToListAsync();
-    }
+        public TEntity Get(
+            Expression<Func<TEntity, bool>> filter,
+            Func<IQueryable<TEntity>, IQueryable<TEntity>> eager,
+            params Expression<Func<TEntity, object>>[] includeProperties
+        )
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
 
-    public TEntity GetNoTracking(Expression<Func<TEntity, bool>> filter = null)
-    {
-        return filter == null
-            ? context.Set<TEntity>().AsNoTracking().FirstOrDefault()
-            : context.Set<TEntity>().AsNoTracking().FirstOrDefault(filter);
-    }
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                    query = query.Include(include);
+            }
 
-    public List<TEntity> GetListNoTracking(Expression<Func<TEntity, bool>> filter = null)
-    {
-        return filter == null
-        ? context.Set<TEntity>().AsNoTracking().ToList()
-        : context.Set<TEntity>().AsNoTracking().Where(filter).ToList();
-    }
+            if (eager != null)
+                query = eager(query);
 
-    public async Task<List<TEntity>> GetListNoTrackingAsync(Expression<Func<TEntity, bool>> filter = null)
-    {
-        return filter == null
-            ? await context.Set<TEntity>().AsNoTracking().ToListAsync()
-            : await context.Set<TEntity>().AsNoTracking().Where(filter).ToListAsync();
+            return filter == null
+                 ? query.FirstOrDefault()
+                 : query.FirstOrDefault(filter);
+        }
+
+        public async Task<TEntity> GetAsync(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return await _context.Set<TEntity>()
+                .SingleOrDefaultAsync(filter);
+        }
+
+        public List<TEntity> GetList(
+            Expression<Func<TEntity, bool>> filter = null,
+            params Expression<Func<TEntity, object>>[] includeProperties)
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                    query = query.Include(include);
+            }
+            return filter == null
+                ? query.ToList()
+                : query.Where(filter).ToList();
+        }
+
+        public List<TEntity> GetList(
+    Expression<Func<TEntity, bool>> filter,
+    Func<IQueryable<TEntity>, IQueryable<TEntity>> eager,
+    params Expression<Func<TEntity, object>>[] includeProperties
+)
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                    query = query.Include(include);
+            }
+
+            if (eager != null)
+                query = eager(query);
+
+            if (filter != null)
+                query = query.Where(filter);
+
+            return query.ToList();
+        }
+
+        public async Task<List<TEntity>> GetListAsync(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return filter == null
+                ? await _context.Set<TEntity>().ToListAsync()
+                : await _context.Set<TEntity>().Where(filter).ToListAsync();
+        }
+
+        public TEntity GetNoTracking(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return filter == null
+                ? _context.Set<TEntity>().AsNoTracking().FirstOrDefault()
+                : _context.Set<TEntity>().AsNoTracking().FirstOrDefault(filter);
+        }
+
+        public async Task<TEntity> GetNoTrackingAsync(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return await (filter == null
+                ? _context.Set<TEntity>().AsNoTracking().FirstOrDefaultAsync()
+                : _context.Set<TEntity>().AsNoTracking().FirstOrDefaultAsync(filter));
+        }
+
+        public List<TEntity> GetListNoTracking(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return filter == null
+                ? _context.Set<TEntity>().AsNoTracking().ToList()
+                : _context.Set<TEntity>().AsNoTracking().Where(filter).ToList();
+        }
+
+        public async Task<List<TEntity>> GetListNoTrackingAsync(
+            Expression<Func<TEntity, bool>> filter = null)
+        {
+            return filter == null
+                ? await _context.Set<TEntity>().AsNoTracking().ToListAsync()
+                : await _context.Set<TEntity>().AsNoTracking().Where(filter).ToListAsync();
+        }
+
+        public void DeleteRange(Expression<Func<TEntity, bool>> filter)
+        {
+            var items = _context.Set<TEntity>().Where(filter).ToList();
+            if (!items.Any()) return;
+            _context.Set<TEntity>().RemoveRange(items);
+            _context.SaveChanges();
+        }
+
+        public async Task DeleteRangeAsync(Expression<Func<TEntity, bool>> filter)
+        {
+            var items = await _context.Set<TEntity>().Where(filter).ToListAsync();
+            if (!items.Any()) return;
+            _context.Set<TEntity>().RemoveRange(items);
+            await _context.SaveChangesAsync();
+        }
     }
 }

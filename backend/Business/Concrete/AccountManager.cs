@@ -115,7 +115,7 @@ public class AccountManager : IAccountService
 
             user = userDal.Get(
                 x => x.Email == registerDto.Email,
-                u => user.UserRoles
+                x => x.UserRoles
             );
 
             var token = tokenHelper.CreateToken(new TokenUser
