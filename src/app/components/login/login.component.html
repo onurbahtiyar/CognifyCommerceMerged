@@ -1,0 +1,79 @@
+<div class="min-h-screen flex items-center justify-center bg-background px-4 py-12">
+  <div class="flex w-full max-w-5xl rounded-xl overflow-hidden shadow-xl border border-gray-200">
+
+    <!-- Sol Panel (Tanıtım) -->
+    <div class="hidden lg:flex flex-col justify-between bg-primary-dark text-white p-10 w-1/2">
+      <div>
+        <div class="flex items-center gap-3 text-xl font-bold">
+          <i class="fa-solid fa-brain fa-lg"></i>
+          <span>CognifyCommerce</span>
+        </div>
+        <p class="mt-8 text-2xl font-semibold">AI destekli ticaretin gücünü keşfet</p>
+        <p class="mt-4 text-white/80 text-sm leading-relaxed">SQL üretimi, OCR ile fatura tanıma, AI dashboard ve daha fazlası…</p>
+      </div>
+      <button class="mt-8 inline-flex items-center gap-2 bg-white text-primary-dark font-semibold px-5 py-2 rounded-full hover:bg-gray-100 transition w-max">
+        <i class="fa-solid fa-circle-play"></i>
+        Demo İzle
+      </button>
+    </div>
+
+    <!-- Sağ Panel (Login) -->
+    <div class="w-full lg:w-1/2 bg-surface p-8 sm:p-12">
+      <div class="text-center mb-8">
+        <img src="assets/logo.png" alt="CognifyCommerce Logo" class="mx-auto h-24 w-auto mb-3" />
+        <h1 class="text-3xl font-bold text-accent">Giriş Yap</h1>
+        <p class="text-sm text-gray-500 mt-1">Lütfen bilgilerinizi giriniz</p>
+      </div>
+
+      <form (ngSubmit)="login()" novalidate class="space-y-5">
+
+        <!-- E-posta Adı -->
+        <div>
+          <label for="login-email" class="block text-sm font-medium text-gray-600 mb-1">E-posta</label>
+          <input
+            [(ngModel)]="loginData.username"
+            name="loginUsername"
+            id="login-username"
+            type="text"
+            placeholder="örn: info@onurbahtiyar.dev"
+            class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+            required
+          />
+        </div>
+
+        <!-- Şifre -->
+        <div>
+          <label for="login-password" class="block text-sm font-medium text-gray-600 mb-1">Şifre</label>
+          <input
+            [(ngModel)]="loginData.password"
+            name="loginPassword"
+            id="login-password"
+            type="password"
+            placeholder="••••••••"
+            class="form-input w-full rounded-md border-gray-300 focus:ring-primary focus:border-primary"
+            required
+          />
+        </div>
+
+        <!-- Şifremi Unuttum -->
+        <div class="text-right">
+          <a routerLink="/forgot-password" class="text-sm text-primary hover:underline">Şifremi unuttum?</a>
+        </div>
+
+        <!-- Giriş Butonu -->
+        <button
+          type="submit"
+          [disabled]="loading"
+          class="w-full flex items-center justify-center py-2 px-4 bg-primary text-white rounded-md font-semibold hover:bg-primary-light disabled:opacity-50 transition"
+        >
+          <svg *ngIf="loading" class="animate-spin h-5 w-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+          </svg>
+          <span>{{ loading ? 'Giriş yapılıyor…' : 'Giriş Yap' }}</span>
+        </button>
+
+      </form>
+    </div>
+  </div>
+</div>
