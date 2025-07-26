@@ -4,6 +4,7 @@ using Core.Utilities.Result.Abstract;
 using Core.Utilities.Result.Concrete;
 using Core.Utilities.Security.JWT;
 using DataAccess.Abstract;
+using DataAccess.Concrete.EntityFramework;
 using Enigma;
 using Entities.Concrete.EntityFramework.Entities;
 using Entities.Dtos;
@@ -40,15 +41,20 @@ public class AccountManager : IAccountService
             }
 
             var user = userDal.Get(
-                    x => (x.Username == loginDto.Username || x.Email == loginDto.Username) && x.Password == loginDto.Password,
-                    u => u.UserRoles
+                    x => (x.Username == loginDto.Username || x.Email == loginDto.Username) && x.Password == loginDto.Password
                 );
+
             if (user == null)
             {
                 return new ErrorDataResult<AccessToken>(data: null, SystemMessages.InvalidCredentials);
             }
 
-            var userRoles = userRoleDal.GetList(x => x.UserGuid == user.Guid).Select(x=> x.Role.RoleName).ToList();
+            var userRoles = userRoleDal
+                .GetList(
+                    x => x.UserGuid == user.Guid, 
+                    x => x.Role)
+                .Select(x => x.Role.RoleName)
+                .ToList();
 
             var token = tokenHelper.CreateToken(new TokenUser
             {
