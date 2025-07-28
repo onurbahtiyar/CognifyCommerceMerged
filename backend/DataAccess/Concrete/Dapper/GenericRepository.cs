@@ -1,6 +1,7 @@
 ﻿using Core.Utilities.Result.Abstract;
 using Core.Utilities.Result.Concrete;
 using Dapper;
+using Entities.Dtos;
 using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using System.Data;
@@ -126,6 +127,21 @@ public class GenericRepository
         }
     }
 
+    public int ExecuteCommand(string sql, object parameters = null)
+    {
+        try
+        {
+            connection.Open();
+            return connection.Execute(sql, parameters);
+        }
+        catch { return 0; }
+        finally
+        {
+            if (connection.State == ConnectionState.Open)
+                connection.Close();
+        }
+    }
+
     public void LogError(Exception exception, object userInput = null, string? userName = null, string actionName = "", string controllerName = "")
     {
         try
@@ -161,6 +177,67 @@ public class GenericRepository
         catch (Exception)
         {
             return;
+        }
+    }
+
+    public IDataResult<DatabaseSchemaDescriptionDto> GetDatabaseSchemaDescriptions(string schemaName = null, string tableName = null)
+    {
+        try
+        {
+            connection.Open();
+            using var multi = connection.QueryMultiple(
+                "usp_GetDatabaseSchemaDescriptions",
+                new { SchemaName = schemaName, TableName = tableName },
+                commandType: CommandType.StoredProcedure);
+
+            var tables = multi.Read<TableDescriptionDto>().ToList();
+            var columns = multi.Read<ColumnInfoDto>().ToList();
+            var fks = multi.Read<ForeignKeyDto>().ToList();
+
+            var result = new DatabaseSchemaDescriptionDto
+            {
+                Tables = tables,
+                Columns = columns,
+                ForeignKeys = fks
+            };
+
+            return new SuccessDataResult<DatabaseSchemaDescriptionDto>(result);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex,
+                new { schemaName, tableName },
+                userName: "DAPPER",
+                actionName: "GetDatabaseSchemaDescriptions",
+                controllerName: "GenericRepository");
+
+            return new ErrorDataResult<DatabaseSchemaDescriptionDto>(null, ex.Message);
+        }
+        finally
+        {
+            if (connection.State == ConnectionState.Open)
+                connection.Close();
+        }
+    }
+
+    public IDataResult<List<dynamic>> QueryDynamic(string sql, object parameters = null)
+    {
+        try
+        {
+            connection.Open();
+            // Dapper Query ile dynamic nesneler elde ediyoruz
+            var result = connection.Query(sql, parameters).AsList();
+            return new SuccessDataResult<List<dynamic>>(result);
+        }
+        catch (Exception ex)
+        {
+            LogError(ex, new { sql, parameters }, "DAPPER", "QueryDynamic", "GenericRepository");
+            return new ErrorDataResult<List<dynamic>>(null, ex.Message);
+        }
+        finally
+        {
+            if (connection.State == ConnectionState.Open)
+                connection.Close();
         }
     }
 }

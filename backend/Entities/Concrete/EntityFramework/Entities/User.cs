@@ -33,7 +33,6 @@ public class User : IEntity {
     [StringLength(50)]
     public string? PhoneNumber { get; set; }
 
-    public DateOnly? DateOfBirth { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? CreatedDate { get; set; }
@@ -41,25 +40,7 @@ public class User : IEntity {
     [Column(TypeName = "datetime")]
     public DateTime? LastLoginDate { get; set; }
 
-    public bool? IsEmailConfirmed { get; set; }
-
-    public bool? IsActive { get; set; }
-
-    [StringLength(350)]
-    public string? ProfilePictureUrl { get; set; }
-
-    public bool? Gender { get; set; }
-
-    [StringLength(250)]
-    public string Address { get; set; } = null!;
-
-    [StringLength(50)]
-    public string? Country { get; set; }
-
-    [StringLength(10)]
-    public string? PreferredLanguage { get; set; }
-
-    public bool? TwoFactorEnabled { get; set; }
+    public bool IsActive { get; set; }
 
     [InverseProperty("User")]
     public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();

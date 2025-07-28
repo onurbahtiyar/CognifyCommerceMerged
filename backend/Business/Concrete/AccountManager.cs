@@ -41,7 +41,7 @@ public class AccountManager : IAccountService
             }
 
             var user = userDal.Get(
-                    x => (x.Username == loginDto.Username || x.Email == loginDto.Username) && x.Password == loginDto.Password
+                    x => (x.Username == loginDto.Username || x.Email == loginDto.Username) && x.Password == loginDto.Password && x.IsActive
                 );
 
             if (user == null)
@@ -99,14 +99,8 @@ public class AccountManager : IAccountService
                 LastName = registerDto.LastName,
                 Username = registerDto.Username,
                 PhoneNumber = registerDto.PhoneNumber,
-                DateOfBirth = registerDto.DateOfBirth,
-                ProfilePictureUrl = registerDto.ProfilePictureUrl,
-                Gender = registerDto.Gender,
-                Address = registerDto.Address,
-                Country = registerDto.Country,
-                PreferredLanguage = registerDto.PreferredLanguage,
-                TwoFactorEnabled = registerDto.TwoFactorEnabled,
-                CreatedDate = DateTime.Now
+                CreatedDate = DateTime.Now,
+                IsActive = true
             };
             userDal.Add(user);
 

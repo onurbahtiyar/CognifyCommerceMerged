@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shared", "Shared\Shared.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Enigma", "Enigma\Enigma.csproj", "{78F0708A-0F74-40CC-B4F5-AD31D5D2A5C4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeminiTestApp", "GeminiTestApp\GeminiTestApp.csproj", "{A564A441-8D41-414F-A492-D783D5D13BD5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,14 @@ Global
 		{78F0708A-0F74-40CC-B4F5-AD31D5D2A5C4}.LIVE|Any CPU.Build.0 = Debug|Any CPU
 		{78F0708A-0F74-40CC-B4F5-AD31D5D2A5C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78F0708A-0F74-40CC-B4F5-AD31D5D2A5C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Developer|Any CPU.ActiveCfg = Release|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Developer|Any CPU.Build.0 = Release|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.LIVE|Any CPU.ActiveCfg = Debug|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.LIVE|Any CPU.Build.0 = Debug|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A564A441-8D41-414F-A492-D783D5D13BD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

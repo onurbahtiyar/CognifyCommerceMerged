@@ -42,29 +42,5 @@ namespace Entities.Dtos
         [JsonPropertyName("PhoneNumber")]
         public string PhoneNumber { get; set; }
 
-        [JsonPropertyName("DateOfBirth")]
-        public DateOnly? DateOfBirth { get; set; }
-
-        [StringLength(350)]
-        [JsonPropertyName("ProfilePictureUrl")]
-        public string? ProfilePictureUrl { get; set; }
-
-        [JsonPropertyName("Gender")]
-        public bool? Gender { get; set; }
-
-        [StringLength(250)]
-        [JsonPropertyName("Address")]
-        public string Address { get; set; }
-
-        [StringLength(50)]
-        [JsonPropertyName("Country")]
-        public string Country { get; set; }
-
-        [StringLength(10)]
-        [JsonPropertyName("PreferredLanguage")]
-        public string PreferredLanguage { get; set; }
-
-        [JsonPropertyName("TwoFactorEnabled")]
-        public bool? TwoFactorEnabled { get; set; }
     }
 }

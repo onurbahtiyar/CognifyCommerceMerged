@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Castle.Core.Resource;
 using Entities.Concrete.EntityFramework.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,6 +27,9 @@ public partial class ContextDb : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
+    public virtual DbSet<Product> Products { get; set; }
+    public virtual DbSet<Category> Categories { get; set; }
+    public virtual DbSet<Customer> Customers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,6 +53,18 @@ public partial class ContextDb : DbContext
                 .HasForeignKey(d => d.UserGuid)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRole_UserGuid");
+        });
+
+        modelBuilder.Entity<Product>()
+            .HasOne(p => p.Category)
+            .WithMany(c => c.Products)
+            .HasForeignKey(p => p.CategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Customer>(entity =>
+        {
+            entity.HasKey(e => e.CustomerId);
+            entity.HasIndex(e => e.Email).IsUnique();
         });
 
         OnModelCreatingPartial(modelBuilder);

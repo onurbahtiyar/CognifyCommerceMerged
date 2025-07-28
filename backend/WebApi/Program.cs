@@ -108,7 +108,8 @@ internal class Program
                             corsOrigin.Port == parsedOrigin.Port);
                     })
                     .AllowAnyHeader()
-                    .AllowAnyMethod();
+                    .AllowAnyMethod()
+                    .AllowCredentials();
             });
         });
 
@@ -128,6 +129,22 @@ internal class Program
                 ClockSkew = TimeSpan.Zero,
                 RoleClaimType = ClaimTypes.Role
             };
+
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    var path = context.HttpContext.Request.Path;
+                    var accessToken = context.Request.Query["access_token"].FirstOrDefault();
+                    if (!string.IsNullOrEmpty(accessToken) &&
+                        path.StartsWithSegments("/api/chat/stream"))
+                    {
+                        context.Token = accessToken;
+                    }
+                    return Task.CompletedTask;
+                }
+            };
+
         });
 
         builder.Services.AddSwaggerGen(options =>
@@ -153,7 +170,6 @@ internal class Program
                 }
             });
         });
-
 
         builder.Services.AddControllers(options =>
         {

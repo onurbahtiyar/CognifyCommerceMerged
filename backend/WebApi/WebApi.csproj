@@ -74,6 +74,7 @@
 
   <ItemGroup>
     <Folder Include="logs\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>
