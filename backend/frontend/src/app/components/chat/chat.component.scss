@@ -1,0 +1,76 @@
+// :host seçicisi, bu stillerin yalnızca bu bileşenin sınırları içinde kalmasını sağlar.
+:host {
+
+  // ::ng-deep, stil kapsüllemeyi aşarak dinamik olarak oluşturulan 
+  // alt elemanlara (mention-badge gibi) stil uygulanmasını sağlar.
+  ::ng-deep .prompt-input {
+    // Satır yüksekliğini ve boşlukları düzenleyerek rozetlerin daha iyi hizalanmasını sağlar
+    line-height: 1.7;
+
+    .mention-badge {
+      // Rozetin satır içinde diğer metinlerle düzgün durmasını sağlar
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle; // Rozeti metnin ortasına hizalar
+
+      // Görsel stil
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-radius: 1em; // Tam yuvarlak kenarlar için daha esnek bir birim
+      
+      // İç boşluk ve font ayarları
+      padding: 3px 4px 3px 10px; // Üst/Alt | Sağ | Sol (Silme butonu için sağda boşluk)
+      font-size: 0.875em; // Normal metinden biraz daha küçük
+      font-weight: 500;
+      
+      // Kullanıcı etkileşimi
+      user-select: none; // Metnin seçilmesini engeller
+      cursor: default;
+      
+      // Rozetin etrafındaki boşluk
+      margin: 0 3px;
+      
+      // Rozet içeriğinin alt satıra kaymasını engeller
+      white-space: nowrap;
+
+      // Rozetin içindeki silme ('x') butonu
+      .mention-remove-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        // Butonun boyutu ve şekli
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        margin-left: 6px; // Metinle arasına boşluk koyar
+        
+        // Renk ve efektler
+        background-color: transparent;
+        color: hsl(var(--primary-foreground));
+        border: none;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+
+        // 'x' karakterinin boyutu ve hizası
+        font-size: 16px;
+        line-height: 1;
+
+        // Üzerine gelince belirginleşir
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.2);
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  // Placeholder stilini de :host içine alarak tutarlılığı sağlıyoruz.
+  ::ng-deep .prompt-input:empty:before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+    cursor: text;
+  }
+}

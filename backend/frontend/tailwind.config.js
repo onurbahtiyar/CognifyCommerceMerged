@@ -1,22 +1,47 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: 'class', // Dark mode'u etkinleştirelim
   content: ["./src/**/*.{html,ts}"],
   theme: {
     extend: {
       colors: {
+        // Renk paletini daha organize hale getiriyoruz
+        // Örnek: bg-background, text-foreground, border-border vb.
+        border: 'hsl(var(--border))',
+        input: 'hsl(var(--input))',
+        ring: 'hsl(var(--ring))',
+        background: 'hsl(var(--background))',
+        foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: "#FF6B00",     // turuncu - butonlar
-          light: "#FFA756",     // açık turuncu - hover
-          dark: "#E85D00",     // koyu turuncu
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
-        background: "#FFFFFF",     // arka plan beyaz
-        surface: "#F8F8F8",        // kartların arka planı
-        accent: "#111827",         // çok koyu gri - başlıklar
-        text: "#374151",           // içerik metinleri
-        danger: "#DC2626",
-        success: "#16A34A",
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
+        },
+        destructive: {
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
+        },
+        muted: {
+          DEFAULT: 'hsl(var(--muted))',
+          foreground: 'hsl(var(--muted-foreground))',
+        },
+        accent: {
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
+        },
+        popover: {
+          DEFAULT: 'hsl(var(--popover))',
+          foreground: 'hsl(var(--popover-foreground))',
+        },
+        card: {
+          DEFAULT: 'hsl(var(--card))',
+          foreground: 'hsl(var(--card-foreground))',
+        },
       }
-    },
+    }
   },
   plugins: [
     require("@tailwindcss/forms"),

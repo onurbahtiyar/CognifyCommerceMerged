@@ -5,6 +5,8 @@ import { ToastrService } from 'ngx-toastr';
 import { ApiResponse } from '../../models/api-response.model';
 import { CookieService } from 'ngx-cookie-service';
 import { Router } from '@angular/router';
+import { AuthService } from 'src/app/services/auth.service';
+import { ThemeService } from 'src/app/services/theme.service';
 
 @Component({
   selector: 'app-login',
@@ -14,12 +16,17 @@ import { Router } from '@angular/router';
 export class LoginComponent {
   loginData: LoginDto = { username: '', password: '' };
   loading = false;
+  
+  // Footer için dinamik yıl
+  currentYear = new Date().getFullYear();
 
   constructor(
     private userService: UserService,
     private toastr: ToastrService,
     private cookieService: CookieService,
-    private router: Router
+    private router: Router,
+    private authService: AuthService,
+    public themeService: ThemeService 
   ) {}
 
   login() {
@@ -27,19 +34,26 @@ export class LoginComponent {
 
     this.userService.login(this.loginData).subscribe({
       next: (res: ApiResponse<any>) => {
-        console.log('Login response:', res);
-        if (res.success) {
-          this.cookieService.set('authToken', res.data.Token, new Date(res.data.Expiration));
+        if (res.success && res.data?.Token) { // Token varlığını kontrol et
+          this.cookieService.set('authToken', res.data.Token, {
+             expires: new Date(res.data.Expiration),
+             secure: true, // Sadece HTTPS üzerinden gönder
+             sameSite: 'Lax'
+          });
           this.cookieService.set('userInfo', JSON.stringify(res.data.User));
+          
           this.toastr.success(res.message || 'Giriş başarılı!', 'Başarılı');
+          this.authService.setLogin();
           this.router.navigate(['/dashboard']);
         } else {
-          this.toastr.warning(res.message || 'Giriş yapılamadı.', 'Uyarı');
+          this.toastr.warning(res.message || 'Kullanıcı adı veya şifre hatalı.', 'Uyarı');
         }
         this.loading = false;
       },
       error: (err) => {
-        this.toastr.error(err.error?.message || 'Sunucu hatası.', 'Hata');
+        // API'den gelen hata mesajını kullan, yoksa genel bir mesaj göster.
+        const errorMessage = err.error?.message || err.error?.title || 'Sunucuyla iletişim kurulamadı.';
+        this.toastr.error(errorMessage, 'Hata');
         this.loading = false;
       }
     });
