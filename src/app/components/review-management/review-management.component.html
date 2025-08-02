@@ -1,0 +1,205 @@
+<!-- Ana Sayfa Konteyneri -->
+<div class="space-y-6">
+
+    <!-- Sayfa Başlığı ve Buton Alanı -->
+    <header class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Yorum Yönetimi</h1>
+            <p class="mt-1 text-muted-foreground">Tüm yorumları görüntüleyin, filtreleyin ve yönetin.</p>
+        </div>
+        <button (click)="openAddModal()"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+            <i class="bi bi-plus-circle-fill"></i>
+            <span>Yeni Yorum Ekle</span>
+        </button>
+    </header>
+
+    <!-- Filtreleme Butonları -->
+    <div class="flex flex-wrap items-center gap-2 border-b border-border pb-4">
+        <button (click)="applyFilter('all')"
+            [ngClass]="currentFilter === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
+            Tümü ({{ allCount }})
+        </button>
+        <button (click)="applyFilter('unapproved')"
+            [ngClass]="currentFilter === 'unapproved' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
+            Onay Bekleyenler ({{ unapprovedCount }})
+        </button>
+        <button (click)="applyFilter('approved')"
+            [ngClass]="currentFilter === 'approved' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80'"
+            class="px-4 py-2 text-sm font-medium rounded-md transition-colors">
+            Onaylananlar ({{ approvedCount }})
+        </button>
+    </div>
+
+    <!-- Yorum Listesi (Mobil Uyumlu) -->
+    <div class="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+        <table class="w-full text-sm">
+            <!-- Sadece Masaüstünde Görünen Tablo Başlığı -->
+            <thead class="hidden md:table-header-group bg-muted/50">
+                <tr>
+                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Müşteri</th>
+                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ürün</th>
+                    <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground" style="width: 40%;">Yorum</th>
+                    <th class="h-12 w-32 px-4 text-center align-middle font-medium text-muted-foreground">Puan</th>
+                    <th class="h-12 w-36 px-4 text-center align-middle font-medium text-muted-foreground">Durum</th>
+                    <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border">
+                <!-- Yükleniyor Durumu -->
+                <tr *ngIf="loading">
+                    <td colspan="6" class="p-8 text-center text-muted-foreground">
+                        <i class="bi bi-arrow-clockwise animate-spin mr-2"></i> Yorumlar yükleniyor...
+                    </td>
+                </tr>
+                <!-- Boş Liste Durumu -->
+                <tr *ngIf="!loading && filteredReviews.length === 0">
+                    <td colspan="6" class="p-8 text-center text-muted-foreground">
+                        Bu filtreye uygun yorum bulunmuyor.
+                    </td>
+                </tr>
+
+                <!-- Yorum Döngüsü -->
+                <ng-container *ngFor="let review of filteredReviews">
+                    
+                    <!-- MASAÜSTÜ GÖRÜNÜMÜ: `md` ve üzeri ekranlar için -->
+                    <tr class="hidden md:table-row hover:bg-muted/50">
+                        <td class="p-4 align-middle font-medium text-foreground">{{ review.customerName }}</td>
+                        <td class="p-4 align-middle text-muted-foreground">{{ review.productName }}</td>
+                        <td class="p-4 align-middle text-muted-foreground">{{ review.comment }}
+                            <div *ngIf="review.replies && review.replies.length > 0" class="mt-2 pl-4 border-l-2 border-primary">
+                                <p class="text-xs font-bold text-primary">Mağaza Yanıtı:</p>
+                                <p class="text-xs italic text-foreground">"{{review.replies[0].comment}}"</p>
+                            </div>
+                        </td>
+                        <td class="p-4 text-center align-middle text-amber-500">
+                            <i *ngFor="let i of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="i <= review.rating" [class.bi-star]="i > review.rating"></i>
+                        </td>
+                        <td class="p-4 text-center align-middle">
+                            <span *ngIf="!review.isApproved" class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-500">Onay Bekliyor</span>
+                            <span *ngIf="review.isApproved" class="px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-500">Onaylandı</span>
+                        </td>
+                        <td class="p-4 text-right align-middle">
+                            <div class="inline-flex items-center gap-2">
+                                <button *ngIf="!review.isApproved" (click)="approveReview(review)" title="Yorumu Onayla" class="flex h-8 w-8 items-center justify-center rounded-md border border-green-500/50 text-green-500 transition-colors hover:bg-green-500 hover:text-white"><i class="bi bi-check-circle-fill"></i></button>
+                                <button (click)="openReplyModal(review)" title="Yorumu Yanıtla" class="flex h-8 w-8 items-center justify-center rounded-md border border-sky-500/50 text-sky-500 transition-colors hover:bg-sky-500 hover:text-white"><i class="bi bi-chat-left-dots-fill"></i></button>
+                                <button (click)="confirmDelete(review)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i class="bi bi-trash3-fill"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- MOBİL GÖRÜNÜMÜ: `md` altı ekranlar için -->
+                    <tr class="block md:hidden">
+                        <td class="p-4 space-y-4" colspan="6">
+                            <!-- Mobil Kart Başlığı -->
+                            <div class="flex justify-between items-start gap-4">
+                                <div>
+                                    <p class="font-semibold text-foreground">{{ review.customerName }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ review.productName }}</p>
+                                </div>
+                                <span *ngIf="!review.isApproved" class="flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full bg-yellow-500/20 text-yellow-500">Onay Bekliyor</span>
+                                <span *ngIf="review.isApproved" class="flex-shrink-0 px-2 py-1 text-xs font-semibold rounded-full bg-green-500/20 text-green-500">Onaylandı</span>
+                            </div>
+                            <!-- Mobil Kart İçeriği -->
+                            <div class="text-muted-foreground">
+                                <p>{{ review.comment }}</p>
+                                <div *ngIf="review.replies && review.replies.length > 0" class="mt-2 pl-3 border-l-2 border-primary/70">
+                                    <p class="text-xs font-bold text-primary">Mağaza Yanıtı:</p>
+                                    <p class="text-xs italic text-foreground">"{{review.replies[0].comment}}"</p>
+                                </div>
+                            </div>
+                            <!-- Mobil Kart Alt Kısım -->
+                            <div class="flex justify-between items-center">
+                                <div class="text-amber-500 text-lg">
+                                    <i *ngFor="let i of [1,2,3,4,5]" class="bi" [class.bi-star-fill]="i <= review.rating" [class.bi-star]="i > review.rating"></i>
+                                </div>
+                                <div class="inline-flex items-center gap-2">
+                                    <button *ngIf="!review.isApproved" (click)="approveReview(review)" title="Yorumu Onayla" class="flex h-8 w-8 items-center justify-center rounded-md border border-green-500/50 text-green-500 transition-colors hover:bg-green-500 hover:text-white"><i class="bi bi-check-circle-fill"></i></button>
+                                    <button (click)="openReplyModal(review)" title="Yorumu Yanıtla" class="flex h-8 w-8 items-center justify-center rounded-md border border-sky-500/50 text-sky-500 transition-colors hover:bg-sky-500 hover:text-white"><i class="bi bi-chat-left-dots-fill"></i></button>
+                                    <button (click)="confirmDelete(review)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i class="bi bi-trash3-fill"></i></button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-container>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Yorum Yanıtlama Modalı -->
+<div *ngIf="isReplyModalOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div (click)="closeReplyModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <div class="relative m-4 w-full max-w-lg rounded-lg bg-card shadow-xl border border-border">
+        <header class="flex items-center justify-between border-b border-border p-4">
+            <h2 class="text-lg font-semibold"><i class="bi bi-reply-fill mr-2 text-primary"></i>Yoruma Yanıt Ver</h2>
+            <button (click)="closeReplyModal()" class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"><i class="bi bi-x-lg"></i></button>
+        </header>
+        <main class="p-6 space-y-4" *ngIf="selectedReviewForReply">
+            <div class="border border-border rounded-md p-3 bg-muted/30">
+                <div class="flex items-center justify-between mb-1">
+                    <p class="font-semibold text-sm">{{selectedReviewForReply.customerName}}</p>
+                    <p class="text-xs text-muted-foreground">{{selectedReviewForReply.createdDate | date:'short'}}</p>
+                </div>
+                <p class="text-sm text-muted-foreground italic">"{{selectedReviewForReply.comment}}"</p>
+            </div>
+            <div>
+                <label for="replyText" class="mb-1.5 block text-sm font-medium">Mağaza Yanıtınız</label>
+                <textarea id="replyText" [(ngModel)]="replyText" rows="5" placeholder="Müşteriye yanıtınızı buraya yazın..." class="w-full resize-none rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"></textarea>
+            </div>
+        </main>
+        <footer class="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+            <button type="button" (click)="closeReplyModal()" class="rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+            <button type="button" (click)="submitReply()" [disabled]="!replyText.trim() || isReplying" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <i *ngIf="isReplying" class="bi bi-arrow-clockwise animate-spin"></i>
+                <span>{{ isReplying ? 'Gönderiliyor...' : 'Yanıtı Gönder' }}</span>
+            </button>
+        </footer>
+    </div>
+</div>
+
+<!-- Yeni Yorum Ekleme Modalı -->
+<div *ngIf="isAddModalOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+    <div (click)="closeAddModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+    <form #addForm="ngForm" (ngSubmit)="submitNewReview(addForm)" class="relative m-4 w-full max-w-lg rounded-lg bg-card shadow-xl border border-border">
+        <header class="flex items-center justify-between border-b border-border p-4">
+            <h2 class="text-lg font-semibold"><i class="bi bi-chat-square-text-fill mr-2 text-primary"></i>Manuel Yorum Ekle</h2>
+            <button type="button" (click)="closeAddModal()" class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"><i class="bi bi-x-lg"></i></button>
+        </header>
+        <main class="p-6 space-y-4">
+            <div>
+                <label for="add-customer" class="mb-1.5 block text-sm font-medium">Yorumu Yapan Müşteri</label>
+                <select id="add-customer" name="customerId" [(ngModel)]="newReview.customerId" required class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+                    <option [ngValue]="0" disabled>Müşteri seçiniz...</option>
+                    <option *ngFor="let customer of customers" [value]="customer.customerId">{{ customer.firstName }} {{ customer.lastName }} ({{customer.email}})</option>
+                </select>
+            </div>
+            <div>
+                <label for="add-product" class="mb-1.5 block text-sm font-medium">Yorum Yapılacak Ürün</label>
+                <select id="add-product" name="productId" [(ngModel)]="newReview.productId" required class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+                    <option [ngValue]="0" disabled>Ürün seçiniz...</option>
+                    <option *ngFor="let product of products" [value]="product.productId">{{ product.name }}</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-2">Puan</label>
+                <div class="flex items-center gap-1 text-2xl text-amber-400">
+                    <i *ngFor="let i of [1,2,3,4,5]" class="bi cursor-pointer transition-transform hover:scale-125" [class.bi-star-fill]="i <= (hoveredRating || newReview.rating)" [class.bi-star]="i > (hoveredRating || newReview.rating)" (mouseenter)="hoveredRating = i" (mouseleave)="hoveredRating = 0" (click)="setRating(i)"></i>
+                </div>
+            </div>
+            <div>
+                <label for="add-comment" class="mb-1.5 block text-sm font-medium">Yorum Metni</label>
+                <textarea id="add-comment" name="comment" [(ngModel)]="newReview.comment" required rows="5" placeholder="Müşterinin yorumunu buraya yazın..." class="w-full resize-none rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"></textarea>
+            </div>
+        </main>
+        <footer class="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+            <button type="button" (click)="closeAddModal()" class="rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+            <button type="submit" [disabled]="addForm.invalid || isSubmittingNewReview" class="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <i *ngIf="isSubmittingNewReview" class="bi bi-arrow-clockwise animate-spin"></i>
+                <span>{{ isSubmittingNewReview ? 'Kaydediliyor...' : 'Yorumu Kaydet' }}</span>
+            </button>
+        </footer>
+    </form>
+</div>

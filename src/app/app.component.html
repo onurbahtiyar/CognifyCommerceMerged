@@ -1,1 +1,142 @@
-<router-outlet></router-outlet>
+<!-- Giriş yapılmışsa (Admin Paneli) -->
+<ng-container *ngIf="isLogin; else publicView">
+  <div class="flex h-screen bg-background text-foreground">
+
+    <!-- Kenar Çubuğu (Sidebar) -->
+    <aside
+      class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out md:translate-x-0"
+      [ngClass]="{ '-translate-x-full': !isSidebarOpen }">
+
+      <!-- Logo/Başlık -->
+      <div class="flex h-16 shrink-0 items-center border-b border-border px-6">
+        <a routerLink="/" class="flex items-center gap-2 font-semibold">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-primary" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+          <span class="text-lg">CognifyCommerce</span>
+        </a>
+      </div>
+
+      <!-- Navigasyon Menüsü -->
+      <nav class="flex-1 overflow-y-auto px-4 py-4">
+        <ul class="grid gap-1">
+          <li>
+            <a routerLink="/dashboard" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-house-door-fill text-lg"></i>
+              <span>Ana Sayfa</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/products" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-box-seam-fill text-lg"></i>
+              <span>Ürünler</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/categories" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-tags-fill text-lg"></i>
+              <span>Kategoriler</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/customers" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-people-fill text-lg"></i>
+              <span>Müşteriler</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/orders" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-card-list text-lg"></i>
+              <span>Siparişler</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/reviews" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-chat-square-text-fill text-lg"></i>
+              <span>Yorumlar</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/chat" routerLinkActive="bg-muted text-foreground"
+              class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+              (click)="isSidebarOpen = false">
+              <i class="bi bi-chat-dots-fill text-lg"></i>
+              <span>AI Chat</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Mobil için Arka Plan Karartma -->
+    <div *ngIf="isSidebarOpen" (click)="toggleSidebar()" class="fixed inset-0 z-30 bg-black/60 md:hidden"></div>
+
+    <!-- Ana İçerik Alanı -->
+    <div class="flex flex-1 flex-col md:pl-72">
+
+      <!-- Üst Bar (Header) -->
+      <header
+        class="sticky top-0 z-10 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm md:px-6">
+        <!-- Mobil Menü Butonu -->
+        <button class="md:hidden" (click)="toggleSidebar()">
+          <i class="bi bi-list text-2xl"></i>
+          <span class="sr-only">Menüyü Aç</span>
+        </button>
+        <!-- Boşluk bırakmak için -->
+        <div class="md:w-0"></div>
+
+        <!-- Sağ Taraftaki Kullanıcı ve Tema Butonları -->
+        <div class="flex items-center gap-4">
+          <!-- Tema Değiştirici -->
+          <button (click)="themeService.toggleTheme()"
+            class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+            <i *ngIf="themeService.getTheme() === 'light'" class="bi bi-moon-stars-fill"></i>
+            <i *ngIf="themeService.getTheme() === 'dark'" class="bi bi-sun-fill"></i>
+            <span class="sr-only">Temayı Değiştir</span>
+          </button>
+
+          <!-- Kullanıcı Menüsü (Basit versiyon) -->
+          <div class="flex items-center gap-3">
+            <div class="hidden flex-col items-end sm:flex">
+              <span class="font-semibold">{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+              <span class="text-xs text-muted-foreground">Admin</span>
+            </div>
+            <div class="relative">
+              <button class="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-bold"
+                (click)="logout()">
+                <i class="bi bi-box-arrow-right"></i>
+              </button>
+              <!-- Buraya dropdown menü de eklenebilir -->
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- Sayfa İçeriği -->
+      <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+        <router-outlet></router-outlet>
+      </main>
+
+    </div>
+  </div>
+</ng-container>
+
+<!-- Giriş yapılmamışsa (Login vb. sayfalar) -->
+<ng-template #publicView>
+  <div class="min-h-screen bg-background">
+    <router-outlet></router-outlet>
+  </div>
+</ng-template>
