@@ -10,6 +10,10 @@ namespace Entities.Dtos
     // API'ye gönderilecek isteğin ana yapısı
     public class GeminiRequest
     {
+        [JsonPropertyName("model")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string Model { get; set; }
+
         [JsonPropertyName("contents")]
         public List<Content> Contents { get; set; }
 
@@ -18,6 +22,9 @@ namespace Entities.Dtos
 
         [JsonPropertyName("generationConfig")]
         public GenerationConfig GenerationConfig { get; set; } = new GenerationConfig();
+        [JsonPropertyName("tools")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public List<Tool> Tools { get; set; }
     }
 
     // "user" veya "model" rolünü ve içeriği tutar
@@ -78,5 +85,20 @@ namespace Entities.Dtos
     {
         [JsonPropertyName("content")]
         public Content Content { get; set; }
+    }
+
+    public class Tool
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
+        [JsonPropertyName("input")]
+        public object Input { get; set; }
+    }
+
+    public class GoogleSearch
+    {
+        [JsonPropertyName("query")]
+        public string Query { get; set; }
     }
 }

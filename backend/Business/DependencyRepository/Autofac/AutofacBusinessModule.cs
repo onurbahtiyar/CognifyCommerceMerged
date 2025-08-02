@@ -1,4 +1,5 @@
 using Autofac;
+using Autofac.Core;
 using AutoMapper;
 using Business.Abstract;
 using Business.Concrete;
@@ -58,6 +59,16 @@ namespace Business.DependencyRepository.Autofac
 
             builder.RegisterType<EfCustomerDal>().As<ICustomerDal>();
             builder.RegisterType<CustomerManager>().As<ICustomerService>();
+            builder.RegisterType<EfShipperDal>().As<IShipperDal>().InstancePerLifetimeScope();
+            builder.RegisterType<EfOrderDal>().As<IOrderDal>().InstancePerLifetimeScope();
+            builder.RegisterType<EfOrderItemDal>().As<IOrderItemDal>().InstancePerLifetimeScope();
+
+            builder.RegisterType<OrderManager>().As<IOrderService>();
+            builder.RegisterType<ShipperManager>().As<IShipperService>();
+
+            builder.RegisterType<ProductReviewManager>().As<IProductReviewService>();
+            builder.RegisterType<EfProductReviewDal>().As<IProductReviewDal>();
+
 
             builder.Register(c =>
             {
@@ -69,10 +80,10 @@ namespace Business.DependencyRepository.Autofac
 
                 if (string.IsNullOrEmpty(apiKey))
                 {
-                    throw new InvalidOperationException("Gemini API anahtarý (Gemini:ApiKey) appsettings.json dosyasýnda bulunamadý.");
+                    throw new InvalidOperationException("Gemini API anahtarï¿½ (Gemini:ApiKey) appsettings.json dosyasï¿½nda bulunamadï¿½.");
                 }
 
-                // Sýnýf adýnýzýn GeminiManager olduðundan emin olun
+                // Sï¿½nï¿½f adï¿½nï¿½zï¿½n GeminiManager olduï¿½undan emin olun
                 return new GeminiManager(httpClientFactory.CreateClient(), apiKey);
 
             }).As<IGeminiService>().SingleInstance();

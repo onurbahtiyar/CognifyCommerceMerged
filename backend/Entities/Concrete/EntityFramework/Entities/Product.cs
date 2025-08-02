@@ -19,6 +19,7 @@ namespace Entities.Concrete.EntityFramework.Entities
         public bool IsActive { get; set; }
         [ForeignKey("Category")]
         public int CategoryId { get; set; }
+        public string ImageUrl { get; set; }
         public virtual Category Category { get; set; }
     }
 }

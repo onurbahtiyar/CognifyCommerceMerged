@@ -17,5 +17,22 @@ namespace Entities.Dtos
         public DateTime CreatedDate { get; set; }
         public int CategoryId { get; set; }
         public string CategoryName { get; set; }
+        public string ImageUrl { get; set; }
+    }
+
+    public class RetailerInfo
+    {
+        public string StoreName { get; set; }
+        public string Url { get; set; }
+    }
+
+    public class PriceAnalysisResult
+    {
+        public string MinPrice { get; set; }
+        public string MaxPrice { get; set; }
+        public string AveragePrice { get; set; }
+        public List<RetailerInfo> Retailers { get; set; } = new List<RetailerInfo>();
+
+        public string RawResponse { get; set; }
     }
 }

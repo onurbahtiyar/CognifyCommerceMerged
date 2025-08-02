@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Business.Concrete
@@ -77,11 +78,121 @@ namespace Business.Concrete
                     // "text": "içerik" formatını parse et
                     var textValue = line.Substring(line.IndexOf(':') + 1)
                                         .Trim()
-                                        .Trim('"', ',') // Tırnak ve virgülleri temizle
-                                        .Replace("\\n", "\n"); // Satır sonlarını düzelt
+                                        .Trim('"', ',')
+                                        .Replace("\\n", "\n").Replace("\\t", " ");
+
                     yield return textValue;
                 }
             }
         }
+
+
+        public async Task<byte[]> EnhanceImageAsync(
+        byte[] inputImage,
+        string instruction,
+        string targetBackground = "white",
+        string model = "gemini-2.0-flash-preview-image-generation")
+        {
+            var requestUrl = $"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={_apiKey}";
+
+            string base64Image = Convert.ToBase64String(inputImage);
+
+            var payload = new
+            {
+                generation_config = new
+                {
+                    response_modalities = new[] { "TEXT", "IMAGE" } // modelin istediği kombinasyon
+                },
+                contents = new[]
+                {
+            new
+            {
+                role = "user",
+                parts = new object[]
+                {
+                    new
+                    {
+                        text = $"Görseli geliştir: {instruction}. Arka planı '{targetBackground}' yap ve e-ticaret için profesyonel görünsün."
+                    },
+                    new
+                    {
+                        inline_data = new
+                        {
+                            mime_type = "image/jpeg",
+                            data = base64Image
+                        }
+                    }
+                }
+            }
+        }
+            };
+
+            var serializerOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = null, // manuel verdiğimiz alan isimleriyle uyuşsun
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+            };
+
+            var jsonContent = JsonSerializer.Serialize(payload, serializerOptions);
+            var request = new HttpRequestMessage(HttpMethod.Post, requestUrl)
+            {
+                Content = new StringContent(jsonContent, Encoding.UTF8, "application/json")
+            };
+
+            using var response = await _httpClient.SendAsync(request);
+            var responseString = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+                throw new Exception($"Gemini image enhance hatası: {response.StatusCode} - {responseString}");
+
+            using var doc = JsonDocument.Parse(responseString);
+
+            // Hem inline_data hem inlineData için esnek parse
+            if (doc.RootElement.TryGetProperty("candidates", out var candidates) &&
+                candidates.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var candidate in candidates.EnumerateArray())
+                {
+                    if (candidate.TryGetProperty("content", out var content) &&
+                        content.TryGetProperty("parts", out var parts) &&
+                        parts.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var part in parts.EnumerateArray())
+                        {
+                            // önce camelCase "inlineData"
+                            if (part.TryGetProperty("inlineData", out var inlineDataCamel))
+                            {
+                                if (TryExtractBase64FromInlineData(inlineDataCamel, out var base64Camel))
+                                    return Convert.FromBase64String(base64Camel);
+                            }
+
+                            // sonra snake_case "inline_data"
+                            if (part.TryGetProperty("inline_data", out var inlineDataSnake))
+                            {
+                                if (TryExtractBase64FromInlineData(inlineDataSnake, out var base64Snake))
+                                    return Convert.FromBase64String(base64Snake);
+                            }
+                        }
+                    }
+                }
+            }
+
+            throw new Exception("Gelen yanıtta düzenlenmiş görsel bulunamadı.");
+        }
+
+        private bool TryExtractBase64FromInlineData(JsonElement inlineDataElement, out string base64)
+        {
+            base64 = string.Empty;
+
+            // data alanını bul
+            if (inlineDataElement.TryGetProperty("data", out var dataElem) && dataElem.ValueKind == JsonValueKind.String)
+            {
+                base64 = dataElem.GetString()!;
+                return !string.IsNullOrWhiteSpace(base64);
+            }
+
+            return false;
+        }
+
     }
 }

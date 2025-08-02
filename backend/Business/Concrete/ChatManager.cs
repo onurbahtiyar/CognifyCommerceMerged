@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Business.Concrete
@@ -94,16 +95,32 @@ namespace Business.Concrete
                 {
                     sqlBuilder.Append(chunk);
                 }
-                var generatedSql = sqlBuilder.ToString().Replace("```sql", "").Replace("```", "").Trim();
+                var generatedSql = SanitizeAndExtractSql(sqlBuilder.ToString());
+
+                // Eğer temizleme sonrası sorgu boş kalırsa hata fırlat.
+                if (string.IsNullOrWhiteSpace(generatedSql))
+                {
+                    throw new Exception("Yapay zeka geçerli bir SQL sorgusu üretemedi.");
+                }
 
                 var queryResult = _repository.QueryDynamic(generatedSql);
                 if (!queryResult.Success)
                 {
-                    throw new Exception($"SQL çalıştırma hatası: {queryResult.Message}");
+                    throw new Exception($"SQL çalıştırma hatası: {queryResult.Message} [Sorgu: {generatedSql}]");
                 }
 
                 var jsonDataForExplanation = JsonConvert.SerializeObject(queryResult.Data);
-                var explanationPrompt = $"Aşağıdaki JSON verisini ve kullanıcının şu orijinal isteğini analiz et: '{originalUserPrompt}'. Bu verinin ne anlama geldiğini anlatan kısa, samimi bir giriş cümlesi oluştur (örneğin 'İşte en çok satan 5 ürün:'). Sadece bu giriş cümlesini yaz, başka hiçbir şey ekleme.";
+                var explanationPromt = new StringBuilder()
+                    .AppendLine();
+                var explanationPrompt = $@"
+                    Aşağıdaki JSON verisini ve kullanıcının şu orijinal isteğini analiz et: '{originalUserPrompt}'.
+                    Bu verinin ne anlama geldiğini özetleyen, kısa ve samimi bir giriş cümlesi oluştur.
+                    Cümle kullanıcı dostu olmalı, teknik terimler veya sütun adları doğrudan kullanılmamalı.
+                    ID gibi teknik alanlar aynen kalabilir, ancak diğer sütun adları Türkçeleştirilmeli.
+                    Örneğin 'Total' yerine 'Toplam', 'ProductName' yerine 'Ürün Adı' gibi dönüşümler yapılmalı.
+                    Sadece tek bir giriş cümlesi döndür, başka hiçbir şey ekleme.
+                    Cümle şu tarzda olabilir: 'İşte en çok satan 5 ürün:' gibi.
+                    ";
                 _history.Add(("user", explanationPrompt));
                 var explanationBuilder = new StringBuilder();
                 await foreach (var chunk in _geminiService.StreamGenerateContentAsync(_history, _systemPrompt))
@@ -159,6 +176,10 @@ namespace Business.Concrete
                 .AppendLine("1. SQL üretmen istendiğinde, YALNIZCA SQL kodunu ver. Başka hiçbir açıklama, yorum veya ` ``` ` bloğu ekleme.")
                 .AppendLine("2. Bir SQL sonucunu yorumlaman ve açıklama metni oluşturman istendiğinde, sadece kısa ve samimi bir giriş cümlesi yaz.")
                 .AppendLine("3. SQL sorgularında tablo ve sütun adlarını daima köşeli parantez içinde kullan: `[dbo].[Products]`.")
+                .AppendLine("4. Kullanıcı metninde parantez içinde '(tür ID: değer)' formatında bir ifade görürsen, bu ifadeyi doğrudan bir WHERE koşuluna çevirmelisin. Bu, bir nesneye yapılan doğrudan referanstır.")
+                .AppendLine("   - ÖRNEK 1: 'bana (müşteri ID: 123) adlı kişinin son siparişini göster' -> SORGUN ŞUNU İÇERMELİ: `WHERE [c].[CustomerId] = 123`")
+                .AppendLine("   - ÖRNEK 2: 'içinde (ürün ID: 45) olan siparişler' -> SORGUN ŞUNU İÇERMELİ: `WHERE [oi].[ProductId] = 45`")
+                .AppendLine("   - ÖRNEK 3: '(sipariş ID: 101) detayları nelerdir?' -> SORGUN ŞUNU İÇERMELİ: `WHERE [o].[OrderId] = 101`")
                 .AppendLine()
                 .AppendLine("--- VERİTABANI ŞEMASI ---")
                 .AppendLine("== Tablolar ==");
@@ -171,6 +192,27 @@ namespace Business.Concrete
             foreach (var fk in schema.ForeignKeys)
                 sb.AppendLine($"- [{fk.SourceSchema}].[{fk.SourceTable}].[{fk.SourceColumn}] -> [{fk.TargetSchema}].[{fk.TargetTable}].[{fk.TargetColumn}]");
             return sb.ToString();
+        }
+
+        private string SanitizeAndExtractSql(string rawSqlOutput)
+        {
+            var regex = new Regex("```sql\\s*(.*?)\\s*```", RegexOptions.Singleline | RegexOptions.IgnoreCase);
+            var match = regex.Match(rawSqlOutput);
+
+            string extractedSql;
+
+            if (match.Success)
+            {
+                extractedSql = match.Groups[1].Value;
+            }
+            else
+            {
+                extractedSql = rawSqlOutput;
+            }
+
+            var singleLineSql = Regex.Replace(extractedSql, @"\s+", " ").Trim();
+
+            return singleLineSql;
         }
     }
 }

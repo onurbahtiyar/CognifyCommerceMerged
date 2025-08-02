@@ -57,5 +57,36 @@ namespace WebApi.Controllers
             var result = _productService.Delete(id);
             return Ok(result);
         }
+
+        [HttpGet("priceanalysis/{productName}")]
+        public async Task<IActionResult> GetPriceAnalysis(string productName)
+        {
+            var result = await _productService.GetPriceAnalysisAsync(productName);
+            return Ok(result);
+        }
+
+        [HttpPost("enhance-temp-image")]
+        public async Task<IActionResult> EnhanceTempImage([FromForm] IFormFile image, [FromForm] string instruction)
+        {
+            if (image == null || image.Length == 0)
+                return BadRequest(new { success = false, message = "Görsel yüklenmedi." });
+
+            byte[] imageBytes;
+            using (var ms = new MemoryStream())
+            {
+                await image.CopyToAsync(ms);
+                imageBytes = ms.ToArray();
+            }
+
+            var result = await _productService.EnhanceImageTempAsync(imageBytes, instruction);
+            return Ok(result);
+        }
+
+        [HttpPost("attach-image/{productId}")]
+        public async Task<IActionResult> AttachTempImageToProduct(int productId, [FromBody] AttachTempImageRequest request)
+        {
+            var result = await _productService.AttachTempImageToProductAsync(productId, request.TempImageUrl);
+            return Ok(result);
+        }
     }
 }

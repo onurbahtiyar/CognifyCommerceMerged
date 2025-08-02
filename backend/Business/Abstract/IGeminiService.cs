@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Entities.Dtos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,5 +13,7 @@ namespace Business.Abstract
             List<(string Role, string Content)> history,
             string systemPrompt = null,
             string model = "gemini-1.5-flash-latest");
+
+        Task<byte[]> EnhanceImageAsync(byte[] inputImage, string instruction, string targetBackground = "white", string model = "gemini-2.0-flash-preview-image-generation");
     }
 }
