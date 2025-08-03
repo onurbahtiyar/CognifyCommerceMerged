@@ -162,7 +162,6 @@ export class ProductListComponent implements OnInit {
   }
 
   confirmDelete(id: number): void {
-    // Daha iyi bir UX için SweetAlert2 gibi bir kütüphane kullanılabilir.
     if (!confirm('Bu ürünü kalıcı olarak silmek istediğinizden emin misiniz?')) return;
 
     this.productService.deleteProduct(id).subscribe({

@@ -21,6 +21,7 @@
     "@fortawesome/angular-fontawesome": "^0.13.0",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
     "@fortawesome/free-solid-svg-icons": "^6.4.0",
+    "chart.js": "^4.5.0",
     "event-source-polyfill": "^1.0.31",
     "marked": "^15.0.12",
     "ngx-cookie-service": "^13.2.0",

@@ -81,7 +81,7 @@ export class CategoryListComponent implements OnInit {
     this.categoryService.addCategory(this.newCategory).subscribe({
       next: (res: ApiResponse<CategoryDto>) => {
         if (res.success && res.data) {
-          this.categories.unshift(res.data); // Başa ekle
+          this.categories.unshift(res.data);
           this.toastr.success('Kategori başarıyla eklendi.', 'Başarılı');
           this.closePanel();
         } else {

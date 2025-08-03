@@ -11,6 +11,7 @@ import { CategoryListComponent } from './components/category-list/category-list.
 import { CustomerListComponent } from './components/customer-list/customer-list.component';
 import { OrderListComponent } from './components/order-list/order-list.component';
 import { ReviewManagementComponent } from './components/review-management/review-management.component';
+import { ExpenseListComponent } from './components/expense-list/expense-list.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
@@ -22,6 +23,7 @@ const routes: Routes = [
   { path: 'customers', component: CustomerListComponent, canActivate: [AuthGuard] },
   { path: 'orders', component: OrderListComponent, canActivate: [AuthGuard] },
   { path: 'reviews', component: ReviewManagementComponent, canActivate: [AuthGuard] },
+  { path: 'expenses', component: ExpenseListComponent, canActivate: [AuthGuard] },
   { path: '', redirectTo: '/login', pathMatch: 'full' }
 ];
 

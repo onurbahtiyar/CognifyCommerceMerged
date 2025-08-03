@@ -38,7 +38,7 @@ export class ReviewManagementComponent implements OnInit {
   constructor(
     private reviewService: ProductReviewService,
     private productService: ProductService,
-    private customerService: CustomerService, // Sağladığınız CustomerService enjekte edildi
+    private customerService: CustomerService,
     private toastr: ToastrService
   ) { }
 

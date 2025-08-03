@@ -3,16 +3,22 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { CookieService } from 'ngx-cookie-service';
 import { EventSourcePolyfill } from 'event-source-polyfill';
+import { IResult } from '../models/i-result.model';
+import { HttpClient } from '@angular/common/http';
+import { ChatSessionDto, ChatMessageDto } from '../models/chat.model';
+import { ApiResponse } from '../models/api-response.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ChatService {
-  private baseUrl = environment.apiUrl;
+  private baseUrl = environment.apiUrl + 'chat/';
 
-  constructor(private cookieService: CookieService) {}
+  constructor(private cookieService: CookieService,
+    private http: HttpClient,
+  ) {}
 
-  public chatStream(prompt: string): Observable<string> {
+  public chatStream(prompt: string, sessionId?: string): Observable<string> {
     return new Observable(observer => {
       const token = this.cookieService.get('authToken');
       if (!token) {
@@ -20,7 +26,11 @@ export class ChatService {
         return;
       }
 
-      const url = `${this.baseUrl}chat/stream?prompt=${encodeURIComponent(prompt)}&access_token=${encodeURIComponent(token)}`;
+      // URL dinamik olarak oluşturuluyor.
+      let url = `${this.baseUrl}stream?prompt=${encodeURIComponent(prompt)}&access_token=${encodeURIComponent(token)}`;
+      if (sessionId) {
+        url += `&sessionId=${sessionId}`;
+      }
 
       const eventSource = new EventSourcePolyfill(url, {
         withCredentials: true,
@@ -28,32 +38,29 @@ export class ChatService {
       });
 
       eventSource.onmessage = (event: any) => {
-        if (event.data) {
-          observer.next(event.data);
-        }
+        if (event.data) { observer.next(event.data); }
       };
 
-      // DÜZELTME: onerror bloğu daha akıllı hale getirildi.
-      eventSource.onerror = (error: any) => {
-        // `readyState` EventSource'un durumunu belirtir:
-        // 0: CONNECTING, 1: OPEN, 2: CLOSED
-        
-        // Eğer bağlantı kurulmaya çalışırken bir hata olursa, bu gerçek bir ağ hatasıdır.
-        if (eventSource.readyState === EventSource.CONNECTING) {
-          observer.error(new Error('A network error occurred with the chat stream.'));
-        } else {
-          // Eğer bağlantı zaten açıksa veya kapalıysa, bu genellikle stream'in
-          // normal bir şekilde bittiği anlamına gelir. Hata gösterme, sadece tamamla.
-          observer.complete();
-        }
+      eventSource.onerror = () => {
+        observer.complete();
         eventSource.close();
       };
 
-      return () => {
-        if (eventSource && eventSource.readyState !== EventSource.CLOSED) {
-          eventSource.close();
-        }
-      };
+      return () => { eventSource.close(); };
     });
   }
+
+
+  public getAllSessions(): Observable<ApiResponse<ChatSessionDto[]>> {
+    return this.http.get<ApiResponse<ChatSessionDto[]>>(`${this.baseUrl}sessions`);
+  }
+  
+  public getMessagesBySessionId(sessionId: string): Observable<ApiResponse<ChatMessageDto[]>> {
+    return this.http.get<ApiResponse<ChatMessageDto[]>>(`${this.baseUrl}sessions/${sessionId}/messages`);
+  }
+
+  public deleteSession(sessionId: string): Observable<IResult> {
+    return this.http.delete<IResult>(`${this.baseUrl}sessions/${sessionId}`);
+  }
+
 }
