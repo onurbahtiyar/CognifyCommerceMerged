@@ -170,10 +170,8 @@ Ortalama Fiyat: **13.250,00 TL**
 
             var fullResponse = responseBuilder.ToString();
 
-            // Gelen Markdown metnini yeni DTO yapısına parse et
             var result = ParsePriceAnalysisResponse(fullResponse);
 
-            // Ham yanıtı modele ekle
             result.RawResponse = fullResponse;
 
             return new SuccessDataResult<PriceAnalysisResult>(result);
@@ -213,16 +211,13 @@ Ortalama Fiyat: **13.250,00 TL**
             if (string.IsNullOrWhiteSpace(tempImageUrl))
                 return new ErrorDataResult<string>(null, "Geçici görsel URL'si boş.");
 
-            // Beklenen prefix: /uploads/temp-products/
             var expectedPrefix = "/uploads/temp-products/";
             if (!tempImageUrl.StartsWith(expectedPrefix, StringComparison.OrdinalIgnoreCase))
                 return new ErrorDataResult<string>(null, "Geçici görsel URL'si geçersiz.");
 
-            // Fiziksel yol üret (path traversal koruması)
-            var trimmed = tempImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar); // uploads\temp-products\...
+            var trimmed = tempImageUrl.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
             var tempFullPath = Path.GetFullPath(Path.Combine("wwwroot", trimmed));
 
-            // wwwroot/uploads/temp-products içinde mi emin olalım
             var allowedDir = Path.GetFullPath(Path.Combine("wwwroot", "uploads", "temp-products"));
             if (!tempFullPath.StartsWith(allowedDir))
                 return new ErrorDataResult<string>(null, "Geçici görsel konumu yetkisiz.");
@@ -230,13 +225,11 @@ Ortalama Fiyat: **13.250,00 TL**
             if (!File.Exists(tempFullPath))
                 return new ErrorDataResult<string>(null, "Geçici görsel bulunamadı.");
 
-            // Uzantıyı koru, ama güvenli uzantı kontrolü yap
             var extension = Path.GetExtension(tempFullPath)?.ToLowerInvariant();
             var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
             if (string.IsNullOrEmpty(extension) || !allowedExtensions.Contains(extension))
                 return new ErrorDataResult<string>(null, "Görsel uzantısı desteklenmiyor.");
 
-            // Kalıcı isim ve dizin
             var newFileName = $"product_{Guid.NewGuid()}{extension}";
             var permanentDir = Path.Combine("wwwroot", "uploads", "products");
             Directory.CreateDirectory(permanentDir);
@@ -244,9 +237,7 @@ Ortalama Fiyat: **13.250,00 TL**
 
             try
             {
-                // Taşı: önce kopyala, sonra orijinali silerek güvenli davranış
                 File.Copy(tempFullPath, permanentFullPath);
-                // İsteğe bağlı: temp dosyayı sil
                 File.Delete(tempFullPath);
             }
             catch (Exception ex)
@@ -254,7 +245,6 @@ Ortalama Fiyat: **13.250,00 TL**
                 return new ErrorDataResult<string>(null, $"Görsel taşınırken hata oluştu: {ex.Message}");
             }
 
-            // Ürüne ilişkilendir
             product.ImageUrl = $"/uploads/products/{newFileName}";
             _productDal.Update(product);
 
@@ -267,12 +257,10 @@ Ortalama Fiyat: **13.250,00 TL**
             var result = new PriceAnalysisResult();
             var lines = markdownResponse.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
-            // Fiyatları string olarak (örn: "12.500,00 TL") yakalamak için Regex
             var priceRegex = new Regex(@":\s*\**\s*([\d.,\s]+TL)\**", RegexOptions.IgnoreCase);
 
             foreach (var line in lines)
             {
-                // Fiyat satırlarını işle
                 if (line.StartsWith("En Düşük Fiyat", StringComparison.OrdinalIgnoreCase))
                 {
                     var match = priceRegex.Match(line);
@@ -291,7 +279,6 @@ Ortalama Fiyat: **13.250,00 TL**
                     if (match.Success)
                         result.AveragePrice = match.Groups[1].Value.Trim();
                 }
-                // Markdown tablosundaki satırları işle
                 else if (line.Trim().StartsWith("|") && !line.Contains("---"))
                 {
                     var rowRegex = new Regex(@"\|\s*(.*?)\s*\|\s*\[.*?\]\((.*?)\)\s*\|");
@@ -302,7 +289,6 @@ Ortalama Fiyat: **13.250,00 TL**
                         var storeName = match.Groups[1].Value.Trim();
                         var url = match.Groups[2].Value.Trim();
 
-                        // Başlık satırını atla ("| Mağaza | Link |")
                         if (!storeName.Equals("Mağaza", StringComparison.OrdinalIgnoreCase))
                         {
                             result.Retailers.Add(new RetailerInfo

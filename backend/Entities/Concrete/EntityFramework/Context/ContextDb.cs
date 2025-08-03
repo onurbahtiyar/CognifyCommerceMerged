@@ -41,6 +41,16 @@ public partial class ContextDb : DbContext
 
     public virtual DbSet<ProductReview> ProductReviews { get; set; }
 
+    public virtual DbSet<ChatSession> ChatSessions { get; set; }
+
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
+    public virtual DbSet<Expense> Expenses { get; set; }
+
+    public virtual DbSet<ExpenseCategory> ExpenseCategories { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Role>(entity =>
@@ -130,6 +140,52 @@ public partial class ContextDb : DbContext
             entity.HasOne(d => d.ParentReview)
                   .WithMany(p => p.Replies)
                   .HasForeignKey(d => d.ParentReviewId)
+                  .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ChatSession>(entity =>
+        {
+            entity.HasKey(e => e.SessionId);
+
+            entity.Property(e => e.Title).HasMaxLength(255);
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+
+            entity.Property(e => e.Role).IsRequired().HasMaxLength(20);
+
+            entity.Property(e => e.Content).IsRequired();
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+
+            entity.HasOne(d => d.Session)
+                  .WithMany(p => p.Messages)
+                  .HasForeignKey(d => d.SessionId)
+                  .OnDelete(DeleteBehavior.Cascade)
+                  .HasConstraintName("FK_ChatMessages_ChatSessions");
+        });
+
+        modelBuilder.Entity<ExpenseCategory>(entity =>
+        {
+            entity.HasKey(e => e.ExpenseCategoryId);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => e.Name).IsUnique();
+        });
+
+        modelBuilder.Entity<Expense>(entity =>
+        {
+            entity.HasKey(e => e.ExpenseId);
+            entity.Property(e => e.Amount).HasColumnType("decimal(18, 2)");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("getdate()");
+
+            entity.HasOne(d => d.ExpenseCategory)
+                  .WithMany(p => p.Expenses)
+                  .HasForeignKey(d => d.ExpenseCategoryId)
                   .OnDelete(DeleteBehavior.Restrict);
         });
 

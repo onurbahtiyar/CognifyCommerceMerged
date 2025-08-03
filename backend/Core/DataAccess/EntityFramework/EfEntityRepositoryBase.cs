@@ -94,13 +94,6 @@ namespace Core.DataAccess.EntityFramework
                  : query.FirstOrDefault(filter);
         }
 
-        public async Task<TEntity> GetAsync(
-            Expression<Func<TEntity, bool>> filter = null)
-        {
-            return await _context.Set<TEntity>()
-                .SingleOrDefaultAsync(filter);
-        }
-
         public List<TEntity> GetList(
             Expression<Func<TEntity, bool>> filter = null,
             params Expression<Func<TEntity, object>>[] includeProperties)
@@ -139,12 +132,38 @@ namespace Core.DataAccess.EntityFramework
             return query.ToList();
         }
 
-        public async Task<List<TEntity>> GetListAsync(
-            Expression<Func<TEntity, bool>> filter = null)
+        public async Task<TEntity> GetAsync(Expression<Func<TEntity, bool>> filter, params Expression<Func<TEntity, object>>[] includeProperties)
         {
-            return filter == null
-                ? await _context.Set<TEntity>().ToListAsync()
-                : await _context.Set<TEntity>().Where(filter).ToListAsync();
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                {
+                    query = query.Include(include);
+                }
+            }
+            return await query.FirstOrDefaultAsync(filter);
+        }
+
+        public async Task<List<TEntity>> GetListAsync(Expression<Func<TEntity, bool>> filter = null, params Expression<Func<TEntity, object>>[] includeProperties)
+        {
+            IQueryable<TEntity> query = _context.Set<TEntity>();
+
+            if (includeProperties != null)
+            {
+                foreach (var include in includeProperties)
+                {
+                    query = query.Include(include);
+                }
+            }
+
+            if (filter != null)
+            {
+                query = query.Where(filter);
+            }
+
+            return await query.ToListAsync();
         }
 
         public TEntity GetNoTracking(

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Business.Concrete
@@ -31,10 +32,9 @@ namespace Business.Concrete
 
             var requestPayload = new GeminiRequest
             {
-                // API "assistant" yerine "model" rolünü bekler.
-                // "system" rolü ise özel bir alana yazılır.
+
                 Contents = history
-                    .Where(m => m.Role != "system") // Sistem mesajları ana içerikten çıkarılır
+                    .Where(m => m.Role != "system")
                     .Select(m => new Content
                     {
                         Role = m.Role == "assistant" ? "model" : m.Role,
@@ -50,7 +50,6 @@ namespace Business.Concrete
                 };
             }
 
-            // `System.Text.Json` için ayarlar
             var serializerOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -69,19 +68,18 @@ namespace Business.Concrete
             await using var stream = await response.Content.ReadAsStreamAsync();
             using var reader = new StreamReader(stream);
 
-            // Stream'den gelen veriyi satır satır oku. Gemini APIsi, JSON objelerini
             string line;
             while ((line = await reader.ReadLineAsync()) != null)
             {
                 if (line.Trim().StartsWith("\"text\":"))
                 {
-                    // "text": "içerik" formatını parse et
-                    var textValue = line.Substring(line.IndexOf(':') + 1)
+                    var rawText = line.Substring(line.IndexOf(':') + 1)
                                         .Trim()
-                                        .Trim('"', ',')
-                                        .Replace("\\n", "\n").Replace("\\t", " ");
+                                        .Trim('"', ',');
 
-                    yield return textValue;
+                    var unescapedText = Regex.Unescape(rawText);
+
+                    yield return unescapedText;
                 }
             }
         }
@@ -101,7 +99,7 @@ namespace Business.Concrete
             {
                 generation_config = new
                 {
-                    response_modalities = new[] { "TEXT", "IMAGE" } // modelin istediği kombinasyon
+                    response_modalities = new[] { "TEXT", "IMAGE" }
                 },
                 contents = new[]
                 {
@@ -129,7 +127,7 @@ namespace Business.Concrete
 
             var serializerOptions = new JsonSerializerOptions
             {
-                PropertyNamingPolicy = null, // manuel verdiğimiz alan isimleriyle uyuşsun
+                PropertyNamingPolicy = null,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
 
@@ -147,7 +145,6 @@ namespace Business.Concrete
 
             using var doc = JsonDocument.Parse(responseString);
 
-            // Hem inline_data hem inlineData için esnek parse
             if (doc.RootElement.TryGetProperty("candidates", out var candidates) &&
                 candidates.ValueKind == JsonValueKind.Array)
             {
@@ -159,14 +156,12 @@ namespace Business.Concrete
                     {
                         foreach (var part in parts.EnumerateArray())
                         {
-                            // önce camelCase "inlineData"
                             if (part.TryGetProperty("inlineData", out var inlineDataCamel))
                             {
                                 if (TryExtractBase64FromInlineData(inlineDataCamel, out var base64Camel))
                                     return Convert.FromBase64String(base64Camel);
                             }
 
-                            // sonra snake_case "inline_data"
                             if (part.TryGetProperty("inline_data", out var inlineDataSnake))
                             {
                                 if (TryExtractBase64FromInlineData(inlineDataSnake, out var base64Snake))
@@ -184,7 +179,6 @@ namespace Business.Concrete
         {
             base64 = string.Empty;
 
-            // data alanını bul
             if (inlineDataElement.TryGetProperty("data", out var dataElem) && dataElem.ValueKind == JsonValueKind.String)
             {
                 base64 = dataElem.GetString()!;

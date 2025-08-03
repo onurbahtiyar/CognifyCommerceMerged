@@ -69,6 +69,19 @@ namespace Business.DependencyRepository.Autofac
             builder.RegisterType<ProductReviewManager>().As<IProductReviewService>();
             builder.RegisterType<EfProductReviewDal>().As<IProductReviewDal>();
 
+            builder.RegisterType<EfChatMessageDal>().As<IChatMessageDal>();
+            builder.RegisterType<EfChatSessionDal>().As<IChatSessionDal>();
+            
+            builder.RegisterType<ExpenseManager>().As<IExpenseService>();
+            builder.RegisterType<EfExpenseDal>().As<IExpenseDal>();
+            builder.RegisterType<EfExpenseCategoryDal>().As<IExpenseCategoryDal>();
+
+            builder.RegisterType<DashboardManager>().As<IDashboardService>();
+
+            builder.RegisterType<EfNotificationDal>().As<INotificationDal>();
+            builder.RegisterType<NotificationManager>().As<INotificationService>();
+            builder.RegisterType<ScheduledJobManager>().As<IScheduledJobService>();
+
 
             builder.Register(c =>
             {

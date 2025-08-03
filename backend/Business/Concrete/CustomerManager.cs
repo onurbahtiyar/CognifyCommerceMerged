@@ -94,13 +94,11 @@ namespace Business.Concrete
             if (customer == null)
                 return new Result(false, "Silinecek müşteri bulunamadı.");
 
-            // Hard delete yerine soft delete (pasife çekme) yapıyoruz.
             customer.IsActive = false;
             _customerDal.Update(customer);
             return new SuccessResult("Müşteri başarıyla silindi.");
         }
 
-        // Tekrarlı koddan kaçınmak için private bir mapper metodu.
         private CustomerDto MapToDto(Customer customer)
         {
             return new CustomerDto

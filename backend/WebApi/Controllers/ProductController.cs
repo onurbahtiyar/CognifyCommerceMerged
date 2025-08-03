@@ -46,7 +46,8 @@ namespace WebApi.Controllers
                 Name = dto.Name,
                 Description = dto.Description,
                 Stock = dto.Stock,
-                Price = dto.Price
+                Price = dto.Price,
+                CategoryId = dto.CategoryId
             });
             return Ok(result);
         }

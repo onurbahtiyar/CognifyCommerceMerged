@@ -1,9 +1,12 @@
 ﻿using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using Business.Abstract;
 using Business.DependencyRepository.Autofac;
 using Core.Utilities.Security.Encryption;
 using Core.Utilities.Security.JWT;
 using Enigma;
+using Hangfire;
+using Hangfire.SqlServer;
 using Infrastructure.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -82,6 +85,23 @@ internal class Program
         builder.Services.AddDbContext<Entities.Concrete.EntityFramework.Context.ContextDb>(options => options.UseSqlServer(connectionString));
 
         builder.Services.AddScoped<SqlConnection>(sp => new SqlConnection(DataAccess.Concrete.Dapper.Context.ContextDb.ConnectionStringDefault));
+
+        #region Hangfire Configuration
+        builder.Services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_170)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(connectionString, new SqlServerStorageOptions
+            {
+                CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                QueuePollInterval = TimeSpan.Zero,
+                UseRecommendedIsolationLevel = true,
+                DisableGlobalLocks = true
+            }));
+
+        builder.Services.AddHangfireServer();
+        #endregion
 
         builder.Services.AddMemoryCache();
         builder.Services.AddTransient<CacheService>();
@@ -252,6 +272,33 @@ internal class Program
                 await next();
             }
         });
+
+        #region Hangfire Dashboard & Jobs
+        ///Güvenli Hangfire Dashboard erişimi için özel bir yetkilendirme yapılacak !!!!!!!!!!!!!
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireAuthorizationFilter() }
+        });
+
+        // Zamanlanmış görevleri kaydedin
+        RecurringJob.AddOrUpdate<IScheduledJobService>(
+            "supply-alert-check",                        // Job ID
+            service => service.CheckForSupplyAlertsAsync(), // Çalıştırılacak metot
+            Cron.Daily(3),                               // Her gün gece 3'te çalış
+            TimeZoneInfo.Local);                         // Sunucunun yerel saatine göre
+
+        RecurringJob.AddOrUpdate<IScheduledJobService>(
+            "unsold-product-check",
+            service => service.CheckForUnsoldProductsAsync(),
+            Cron.Daily(4), // Her gün gece 4'te çalış
+            TimeZoneInfo.Local);
+
+        RecurringJob.AddOrUpdate<IScheduledJobService>(
+            "bad-review-check",
+            service => service.CheckForBadReviewClustersAsync(),
+            Cron.Daily(5), // Her gün gece 5'te çalış
+            TimeZoneInfo.Local);
+        #endregion
 
         app.UseMiddleware<MemoryRateLimitingMiddleware>(150, TimeSpan.FromMinutes(1));
         app.UseMiddleware<ModelValidationMiddleware>();

@@ -31,9 +31,9 @@ public interface IEntityRepository<T> where T : class, IEntity, new()
 
     Task DeleteAsync(T entity);
 
-    Task<List<T>> GetListAsync(Expression<Func<T, bool>> filter = null);
+    Task<List<T>> GetListAsync(Expression<Func<T, bool>> filter = null, params Expression<Func<T, object>>[] includeProperties);
 
-    Task<T> GetAsync(Expression<Func<T, bool>> filter = null);
+    Task<T> GetAsync(Expression<Func<T, bool>> filter, params Expression<Func<T, object>>[] includeProperties);
 
     List<T> GetListNoTracking(Expression<Func<T, bool>> filter = null);
 
