@@ -220,24 +220,21 @@ public class GenericRepository
         }
     }
 
-    public IDataResult<List<dynamic>> QueryDynamic(string sql, object parameters = null)
+    public IDataResult<IEnumerable<IDictionary<string, object>>> QueryDynamic(string sql, object param = null)
     {
         try
         {
-            connection.Open();
-            // Dapper Query ile dynamic nesneler elde ediyoruz
-            var result = connection.Query(sql, parameters).AsList();
-            return new SuccessDataResult<List<dynamic>>(result);
+
+            var resultAsDynamic = connection.Query(sql, param);
+
+            var resultAsDictionary = resultAsDynamic.Select(row => (IDictionary<string, object>)row).ToList();
+
+            return new SuccessDataResult<IEnumerable<IDictionary<string, object>>>(resultAsDictionary, "Sorgu başarıyla çalıştırıldı.");
         }
         catch (Exception ex)
         {
-            LogError(ex, new { sql, parameters }, "DAPPER", "QueryDynamic", "GenericRepository");
-            return new ErrorDataResult<List<dynamic>>(null, ex.Message);
-        }
-        finally
-        {
-            if (connection.State == ConnectionState.Open)
-                connection.Close();
+            return new ErrorDataResult<IEnumerable<IDictionary<string, object>>>(null, $"Dapper sorgu hatası: {ex.Message}");
         }
     }
+
 }

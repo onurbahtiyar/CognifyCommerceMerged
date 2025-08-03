@@ -6,6 +6,7 @@ using DataAccess.Concrete.Dapper;
 using Entities.Concrete;
 using Entities.Concrete.EntityFramework.Entities;
 using Entities.Dtos;
+using Microsoft.Data.SqlClient;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -91,19 +92,65 @@ namespace Business.Concrete
 
             if (needsDatabase)
             {
-                var dataResponseJson = await HandleDatabaseQueryAsync(userPrompt, currentSessionId);
-                yield return dataResponseJson;
+
+                Exception lastException = null;
+                string dataResponseJson = null; 
+                bool isSuccess = false;       
+                const int maxAttempts = 5;
+
+                for (int attempt = 1; attempt <= maxAttempts; attempt++)
+                {
+                    try
+                    {
+                        dataResponseJson = await HandleDatabaseQueryAsync(userPrompt, currentSessionId);
+
+                        isSuccess = true;
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        lastException = ex;
+                        Console.WriteLine($"ChatManager: Attempt {attempt}/{maxAttempts} failed for session {currentSessionId}. Error: {ex.Message}");
+
+                        if (attempt < maxAttempts)
+                        {
+                            await Task.Delay(attempt * 1000);
+                        }
+                    }
+                }
+
+                if (isSuccess)
+                {
+                    yield return dataResponseJson;
+                }
+                else if (lastException != null)
+                {
+                    var errorExplanation = "Üzgünüm, isteğinizi işlerken tekrar eden bir sorunla karşılaştık.";
+                    var detailedError = $"Tüm denemeler başarısız oldu. Lütfen daha sonra tekrar deneyin veya sistem yöneticisiyle iletişime geçin. Son Hata: {lastException.Message}";
+                    var errorResponse = new
+                    {
+                        type = "fatal_error_response",
+                        explanation = errorExplanation,
+                        error = detailedError
+                    };
+                    yield return JsonConvert.SerializeObject(errorResponse);
+                }
+
+                yield break;
+
             }
             else
             {
                 yield return JsonConvert.SerializeObject(new { type = "stream_start" });
-                await foreach (var chunk in HandleNormalConversationAsync(currentSessionId))
+                await foreach (var chunk in HandleNormalConversationAsync(currentSessionId, useDatabaseSystemPrompt: false))
                 {
                     yield return chunk;
                 }
+
                 yield return JsonConvert.SerializeObject(new { type = "stream_end" });
             }
         }
+
         public IDataResult<ChatSessionDto> GetSessionById(Guid sessionId)
         {
             var session = _chatSessionDal.Get(s => s.SessionId == sessionId);
@@ -157,21 +204,24 @@ namespace Business.Concrete
         }
         #endregion
 
-        #region Dahili (Private) Mantıksal Metotlar (GÜNCELLENDİ)
+        #region Dahili (Private) Mantıksal Metotlar
 
         private async Task<string> HandleDatabaseQueryAsync(string originalUserPrompt, Guid sessionId)
         {
-            var (Success, GeneratedSql, QueryData, FinalErrorMessage) = await GenerateAndExecuteSqlWithRetriesAsync(originalUserPrompt, 5);
+            var sqlResult = await GenerateAndExecuteSqlWithRetriesAsync(originalUserPrompt, 5);
 
-            if (!Success)
+            if (!sqlResult.Success)
             {
                 var explanation = "Üzgünüm, isteğinizi işlerken bir sorunla karşılaştım. Yapay zeka sorguyu düzeltmeye çalıştı ancak başarılı olamadı.";
-                var detailedError = $"Son hata: {FinalErrorMessage}. Lütfen isteğinizi farklı bir şekilde ifade etmeyi deneyin veya sistem yöneticisiyle iletişime geçin.";
+                var detailedError = $"Son hata: {sqlResult.ErrorMessage}. Lütfen isteğinizi farklı bir şekilde ifade etmeyi deneyin veya sistem yöneticisiyle iletişime geçin.";
                 var errorJson = JsonConvert.SerializeObject(new { type = "error_response", explanation, error = detailedError });
-                AddMessage(new ChatMessageAddDto { SessionId = sessionId, Role = "assistant", Content = errorJson, IsDatabaseQuery = true, RelatedSql = GeneratedSql, AdditionalData = FinalErrorMessage });
+                AddMessage(new ChatMessageAddDto { SessionId = sessionId, Role = "assistant", Content = errorJson, IsDatabaseQuery = true, RelatedSql = sqlResult.GeneratedSql, AdditionalData = sqlResult.ErrorMessage });
                 _history.Add(("assistant", explanation + " " + detailedError));
                 return errorJson;
             }
+
+            var QueryData = sqlResult.QueryData;
+            var GeneratedSql = sqlResult.GeneratedSql;
 
             try
             {
@@ -185,6 +235,7 @@ namespace Business.Concrete
                 if (matchedChart != null)
                 {
                     var chartJsonString = await GenerateChartJsonAsync(originalUserPrompt, rawJsonData, matchedChart);
+
                     dynamic chartPayload = JsonConvert.DeserializeObject(chartJsonString);
 
                     explanation = $"İsteğiniz doğrultusunda hazırlanan '{matchedChart.DisplayName}' aşağıdadır:";
@@ -193,17 +244,14 @@ namespace Business.Concrete
                 }
                 else
                 {
-
                     dynamic finalData = QueryData;
-
                     var columnMappings = await GetSimplifiedTableStructureAsync(originalUserPrompt, rawJsonData);
 
                     if (columnMappings != null && columnMappings.Count > 0)
                     {
                         var tempSimplifiedData = new List<dynamic>();
-                        foreach (var row in QueryData as IEnumerable<dynamic>)
+                        foreach (var rowAsDict in QueryData)
                         {
-                            var rowAsDict = (IDictionary<string, object>)row;
                             var newRow = new ExpandoObject() as IDictionary<string, object>;
                             foreach (var mapping in columnMappings)
                             {
@@ -214,17 +262,14 @@ namespace Business.Concrete
                             }
                             if (newRow.Count > 0) tempSimplifiedData.Add(newRow);
                         }
-
                         if (tempSimplifiedData.Count > 0)
                         {
                             finalData = tempSimplifiedData;
                         }
                     }
 
-                    // 5. Nihai veriyi (sadeleştirilmiş veya ham) kullanarak yanıtı oluştur.
                     explanation = await GenerateExplanationForDataAsync(originalUserPrompt, JsonConvert.SerializeObject(finalData));
                     responseJson = JsonConvert.SerializeObject(new { type = "data_response", explanation, data = finalData });
-
                     AddMessage(new ChatMessageAddDto { SessionId = sessionId, Role = "assistant", Content = responseJson, IsDatabaseQuery = true, RelatedSql = GeneratedSql, ChartType = "table", AdditionalData = rawJsonData });
                 }
 
@@ -242,10 +287,12 @@ namespace Business.Concrete
             }
         }
 
-        private async IAsyncEnumerable<string> HandleNormalConversationAsync(Guid sessionId)
+        private async IAsyncEnumerable<string> HandleNormalConversationAsync(Guid sessionId, bool useDatabaseSystemPrompt = true)
         {
+            var systemPromptToUse = useDatabaseSystemPrompt ? _systemPrompt : null;
+
             var responseBuilder = new StringBuilder();
-            await foreach (var chunk in _geminiService.StreamGenerateContentAsync(_history, _systemPrompt))
+            await foreach (var chunk in _geminiService.StreamGenerateContentAsync(_history, systemPromptToUse))
             {
                 if (string.IsNullOrEmpty(chunk)) continue;
                 responseBuilder.Append(chunk);
@@ -259,9 +306,10 @@ namespace Business.Concrete
             }
         }
 
+
         #endregion
 
-        private async Task<(bool Success, string GeneratedSql, dynamic QueryData, string ErrorMessage)> GenerateAndExecuteSqlWithRetriesAsync(string originalUserPrompt, int maxAttempts)
+        private async Task<(bool Success, string GeneratedSql, IEnumerable<IDictionary<string, object>> QueryData, string ErrorMessage)> GenerateAndExecuteSqlWithRetriesAsync(string originalUserPrompt, int maxAttempts)
         {
             string lastGeneratedSql = null;
             Exception lastException = null;
@@ -360,119 +408,208 @@ namespace Business.Concrete
             var prompt = $@"
                 Kullanıcının isteği: '{userPrompt}'
                 Bu isteğe yanıt olarak veritabanından şu ham JSON verisi alındı: {rawJsonData}
+                
                 GÖREV: Bu ham veriyi kullanıcıya sunmak için sadeleştir.
                 1. Kullanıcının sorusuyla en alakalı sütunları seç.
                 2. 'Id', 'Guid', 'Password', 'IsDeleted', 'IsActive' gibi teknik veya hassas sütunları ÇIKAR.
                 3. Seçtiğin sütunların başlıklarını (key) kullanıcı dostu, anlaşılır Türkçe isimlere çevir.
-                4. Sonucu, aşağıdaki formatta bir JSON dizisi olarak döndür. Başka HİÇBİR ŞEY EKLEME.
-                FORMAT: [{{ ""originalKey"": ""OrjinalSutunAdi1"", ""displayName"": ""Kullanıcı Dostu Ad 1"" }}]
-                ÖRNEK: Ham Veri: [{{ ""ProductId"": 1, ""Name"": ""Laptop"", ""UnitPrice"": 25000 }}] -> Döndüreceğin JSON: [{{ ""originalKey"": ""Name"", ""displayName"": ""Ürün Adı"" }},{{ ""originalKey"": ""UnitPrice"", ""displayName"": ""Birim Fiyatı"" }}]
+                4. Sonucu, aşağıdaki basit formatta, her eşleşmeyi YENİ BİR SATIRA yazarak döndür. Başka HİÇBİR ŞEY EKLEME.
+
+                FORMAT:
+                OrjinalSutunAdi1:Kullanıcı Dostu Ad 1
+                OrjinalSutunAdi2:Kullanıcı Dostu Ad 2
+
+                ÖRNEK ÇIKTI:
+                Name:Ürün Adı
+                UnitPrice:Birim Fiyatı
             ";
+
             var stringBuilder = new StringBuilder();
             await foreach (var chunk in _geminiService.StreamGenerateContentAsync(new List<(string, string)> { ("user", prompt) }))
             {
                 stringBuilder.Append(chunk);
             }
-            var cleanJson = SanitizeAndExtractJson(stringBuilder.ToString());
+
+            var responseText = stringBuilder.ToString().Trim();
+            var mappings = new List<ColumnMappingDto>();
             try
             {
-                return JsonConvert.DeserializeObject<List<ColumnMappingDto>>(cleanJson);
+                var lines = responseText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(new[] { ':' }, 2);
+                    if (parts.Length == 2)
+                    {
+                        var originalKey = parts[0].Trim();
+                        var displayName = parts[1].Trim();
+                        if (!string.IsNullOrWhiteSpace(originalKey) && !string.IsNullOrWhiteSpace(displayName))
+                        {
+                            mappings.Add(new ColumnMappingDto(originalKey, displayName));
+                        }
+                    }
+                }
+                return mappings;
             }
-            catch { return null; }
+            catch
+            {
+                return null;
+            }
         }
 
         private async Task<bool> ShouldUseDatabaseAsync(string prompt)
         {
             var classificationPrompt = $@"
-Senin görevin, kullanıcının isteğinin bir veritabanı sorgusu gerektirip gerektirmediğini sınıflandırmaktır.
+        Senin görevin, kullanıcının isteğinin bir veritabanı sorgusu gerektirip gerektirmediğini sınıflandırmaktır.
+        # KAPSAM:
+        - VERİTABANI GEREKTİREN İSTEKLER: Bu dükkanın ürünleri, müşterileri, siparişleri, satışları, stok durumu gibi konularla ilgili spesifik veri isteyen sorulardır.
+        - VERİTABANI GEREKTİRMEYEN İSTEKLER: Genel sohbet, selamlaşma, teşekkür, konuşma geçmişiyle ilgili sorular, genel bilgi (tarih, bilim vb.), kod yazma veya yaratıcı metin oluşturma gibi, bu dükkanın özel verilerini içermeyen tüm diğer isteklerdir.
 
-# KAPSAM:
-- VERİTABANI GEREKTİREN İSTEKLER: Ürünler, müşteriler, siparişler, satışlar, stok durumu gibi konularda bilgi listelemek, bulmak, saymak veya özetlemek isteyen sorulardır.
-- VERİTABANI GEREKTİRMEYEN İSTEKLER: Konuşmanın geçmişiyle ilgili sorular ('önce ne demiştin?', 'ilk sorumu tekrar et'), genel sohbet, selamlaşma veya teşekkür gibi ifadelerdir. Bu tür istekler veritabanı erişimi gerektirmez.
+        # ÖRNEKLER:
+        Kullanıcı: 'En çok satan 5 ürünü listele'
+        Cevap: Evet
 
-# ÖRNEKLER:
-Kullanıcı: 'En çok satan 5 ürünü listele'
-Cevap: Evet
+        Kullanıcı: '2 numaralı müşterinin son siparişi nedir?'
+        Cevap: Evet
+        
+        Kullanıcı: 'Merhaba, nasılsın?'
+        Cevap: Hayır
 
-Kullanıcı: '2 numaralı müşterinin son siparişi nedir?'
-Cevap: Evet
+        Kullanıcı: 'Bana C# dilinde bir login örneği yazar mısın?'
+        Cevap: Hayır
 
-Kullanıcı: 'Merhaba, nasılsın?'
-Cevap: Hayır
+        Kullanıcı: 'Türkiye'nin başkenti neresidir?'
+        Cevap: Hayır
 
-Kullanıcı: 'Sana sorduğum ilk soru neydi?'
-Cevap: Hayır
+        Kullanıcı: 'Az önce verdiğin cevabı özetler misin?'
+        Cevap: Hayır
 
-Kullanıcı: 'Az önce verdiğin cevabı özetler misin?'
-Cevap: Hayır
-
-# GÖREV:
-Şimdi aşağıdaki kullanıcı isteğini sınıflandır. Yalnızca 'Evet' veya 'Hayır' olarak yanıt ver.
-
-Kullanıcı: '{prompt}'
-Cevap:";
-
+        # GÖREV:
+        Şimdi aşağıdaki kullanıcı isteğini sınıflandır. Yalnızca 'Evet' veya 'Hayır' olarak yanıt ver.
+        Kullanıcı: '{prompt}'
+        Cevap:";
 
             var historyForClassification = new List<(string, string)> { ("user", classificationPrompt.Trim()) };
             var classificationResponse = new StringBuilder();
-
             await foreach (var chunk in _geminiService.StreamGenerateContentAsync(historyForClassification, null, "gemini-1.5-flash-latest"))
             {
                 classificationResponse.Append(chunk);
             }
-
             return classificationResponse.ToString().Trim().StartsWith("Evet", StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<string> GetPresentationDecision(string userPrompt, string jsonData)
         {
             var allChartKeywords = string.Join(" | ", _chartTypes.SelectMany(c => c.Keywords).Distinct());
-
             var prompt = $@"
-        GÖREV: Sağlanan kullanıcı isteği ve JSON verisine göre en uygun sunum formatını belirle.
-        
-        İSTEK: ""{userPrompt}""
-        VERİ: ""{jsonData}""
-
-        SEÇENEKLER: tablo | {allChartKeywords}
-
-        KURALLAR:
-        1. Yanıtın SADECE ve SADECE 'FORMAT: <seçim>' şeklinde olmalıdır.
-        2. ASLA açıklama, gerekçe veya ek metin ekleme.
-        3. Tek bir veri satırı varsa veya veri karşılaştırmaya uygun değilse 'tablo' seç.
-
-        ÖRNEK ÇIKTI:
-        FORMAT: tablo
-    ";
+                GÖREV: Sağlanan kullanıcı isteği ve JSON verisine göre en uygun sunum formatını belirle.
+                İSTEK: ""{userPrompt}""
+                VERİ: ""{jsonData}""
+                SEÇENEKLER: tablo | {allChartKeywords}
+                KURALLAR:
+                1. Yanıtın SADECE ve SADECE 'FORMAT: <seçim>' şeklinde olmalıdır.
+                2. ASLA açıklama, gerekçe veya ek metin ekleme.
+                3. Tek bir veri satırı varsa veya veri karşılaştırmaya uygun değilse 'tablo' seç.
+                ÖRNEK ÇIKTI: FORMAT: tablo";
 
             var decisionBuilder = new StringBuilder();
             await foreach (var chunk in _geminiService.StreamGenerateContentAsync(new List<(string, string)> { ("user", prompt) }))
             {
                 decisionBuilder.Append(chunk);
             }
-
             return decisionBuilder.ToString().Trim().Split(':').Last().Trim().ToLower();
         }
 
-        private async Task<string> GenerateChartJsonAsync(string userPrompt, string jsonData, ChartTypeInfo chartInfo)
+        private async Task<string> GenerateChartJsonAsync(
+            string userPrompt,
+            string jsonData,
+            ChartTypeInfo chartInfo,
+            Exception previousError = null)
         {
-            var prompt = $@"
-                Kullanıcı isteği: '{userPrompt}'. 
-                Veri: {jsonData}. 
-                Bu veriyi bir '{chartInfo.ChartJsType}' grafiği için Chart.js uyumlu JSON formatına dönüştür.
-                KURALLAR:
-                1. YALNIZCA chartData JSON nesnesini döndür.
-                2. ```json bloğu veya açıklama ekleme.
-                3. ÇOK ÖNEMLİ: JSON içindeki tüm metinsel değerler (string) MUTLAKA çift tırnak (`""`) içine alınmalıdır. Özellikle `labels` dizisindeki değerler `[\""Değer 1\"", \""Değer 2\""]` şeklinde olmalıdır.
-                DOĞRU ÖRNEK: {{""type"":""pie"",""data"":{{""labels"":[\""Aktif Ürünler\"", \""Pasif Ürünler\""],""datasets"":[{{""label"":""Durum"",""data"":}}]}}}}
-                YANLIŞ ÖRNEK: {{""type"":""pie"",""data"":{{""labels"":[Aktif Ürünler, Pasif Ürünler],""datasets"":[{{""label"":""Durum"",""data"":}}]}}}}
-            ";
-            var jsonBuilder = new StringBuilder();
-            await foreach (var chunk in _geminiService.StreamGenerateContentAsync(new List<(string, string)> { ("user", prompt) }, _systemPrompt))
+            var promptBuilder = new StringBuilder();
+            promptBuilder.AppendLine($"Kullanıcının isteği: '{userPrompt}'.");
+            promptBuilder.AppendLine($"Veri: {jsonData}.");
+            promptBuilder.AppendLine($"Bu veriyi bir '{chartInfo.ChartJsType}' grafiği için analiz et.");
+            promptBuilder.AppendLine("GÖREV: Grafiğin etiketlerini (labels) ve veri setlerini (datasets) aşağıdaki basit formatta, her bir öğeyi yeni bir satıra yazarak döndür.");
+            promptBuilder.AppendLine("--- FORMAT ---");
+            promptBuilder.AppendLine("TITLE:Grafik Başlığı");
+            promptBuilder.AppendLine("LABEL:Etiket1,Etiket2,Etiket3");
+            promptBuilder.AppendLine("DATA:SayısalDeğer1,SayısalDeğer2,SayısalDeğer3");
+            promptBuilder.AppendLine("--- KURALLAR ---");
+            promptBuilder.AppendLine("1. Sadece yukarıdaki formatı kullan, başka hiçbir şey ekleme.");
+            promptBuilder.AppendLine("2. Etiket ve veri sayıları EŞİT olmalıdır.");
+            promptBuilder.AppendLine("3. Sayısal değerlerde binlik ayıracı (,) kullanma, ondalık için nokta (.) kullan.");
+            promptBuilder.AppendLine("--- ÖRNEK ÇIKTI ---");
+            promptBuilder.AppendLine("TITLE:Kategorilere Göre Ürün Sayısı");
+            promptBuilder.AppendLine("LABEL:Elektronik,Giyim,Kozmetik");
+            promptBuilder.AppendLine("DATA:15,32,8");
+
+            var prompt = promptBuilder.ToString();
+
+            var responseBuilder = new StringBuilder();
+            await foreach (var chunk in _geminiService.StreamGenerateContentAsync(new List<(string, string)> { ("user", prompt) }))
             {
-                jsonBuilder.Append(chunk);
+                responseBuilder.Append(chunk);
             }
-            return SanitizeAndExtractJson(jsonBuilder.ToString());
+
+            try
+            {
+                var responseText = responseBuilder.ToString().Trim();
+                var lines = responseText.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+                string title = "Grafik";
+                List<string> labels = new List<string>();
+                List<decimal> data = new List<decimal>();
+
+                foreach (var line in lines)
+                {
+                    var parts = line.Split(new[] { ':' }, 2);
+                    if (parts.Length != 2) continue;
+
+                    var key = parts[0].Trim().ToUpper();
+                    var value = parts[1].Trim();
+
+                    switch (key)
+                    {
+                        case "TITLE":
+                            title = value;
+                            break;
+                        case "LABEL":
+                            labels.AddRange(value.Split(',').Select(l => l.Trim()));
+                            break;
+                        case "DATA":
+                            data.AddRange(value.Split(',').Select(d => decimal.TryParse(d.Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var num) ? num : 0));
+                            break;
+                    }
+                }
+
+                if (labels.Count == 0 || data.Count == 0 || labels.Count != data.Count)
+                {
+                    throw new Exception("Yapay zeka tutarsız veya eksik grafik verisi üretti.");
+                }
+
+                var chartJsPayload = new
+                {
+                    type = chartInfo.ChartJsType,
+                    data = new
+                    {
+                        labels = labels,
+                        datasets = new[]
+                        {
+                    new
+                    {
+                        label = title,
+                        data = data
+                    }
+                }
+                    }
+                };
+
+                return JsonConvert.SerializeObject(chartJsPayload);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Grafik verisi işlenirken hata oluştu.", ex);
+            }
         }
 
         private async Task<string> GenerateExplanationForDataAsync(string userPrompt, string jsonData)
