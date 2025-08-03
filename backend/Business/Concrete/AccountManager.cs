@@ -108,7 +108,8 @@ public class AccountManager : IAccountService
             {
                 UserGuid = user.Guid,
                 RoleId = roleDal.Get(x => x.RoleName == "User").RoleId,
-                AssignedDate = DateTime.Now
+                AssignedDate = DateTime.Now,
+                UserId = user.Id
             };
 
             userRoleDal.Add(userRole);
