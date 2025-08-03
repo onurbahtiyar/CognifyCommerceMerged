@@ -1,1 +1,146 @@
-<p>dashboard works!</p>
+<!-- Yükleniyor Durumu -->
+<div *ngIf="loading" class="flex items-center justify-center h-96">
+    <div class="flex flex-col items-center gap-2 text-muted-foreground">
+        <i class="bi bi-arrow-clockwise animate-spin text-4xl"></i>
+        <p>Dashboard verileri yükleniyor...</p>
+    </div>
+</div>
+
+<!-- Hata Durumu -->
+<div *ngIf="!loading && error" class="p-4 bg-destructive/10 border border-destructive/50 text-destructive rounded-lg">
+    <h3 class="font-bold">Bir Hata Oluştu</h3>
+    <p>{{ error }}</p>
+</div>
+
+<!-- Başarılı Veri Yükleme Durumu -->
+<div *ngIf="!loading && dashboardData" class="space-y-6">
+
+    <!-- 1. Bölüm: Özet İstatistik Kartları -->
+    <div class="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+        <div *ngFor="let stat of [
+      dashboardData.summaryStats.totalRevenue,
+      dashboardData.summaryStats.totalExpenses,
+      dashboardData.summaryStats.netProfit,
+      dashboardData.summaryStats.totalOrders,
+      dashboardData.summaryStats.totalCustomers,
+      dashboardData.summaryStats.totalProducts
+    ]" class="p-4 bg-card border border-border rounded-lg shadow-sm">
+            <p class="text-sm font-medium text-muted-foreground">{{ stat.label }}</p>
+            <p class="text-2xl font-bold">
+                {{ stat.label.includes('(TL)') ? (stat.value | currency:'TRY':'symbol-narrow') : (stat.value | number)
+                }}
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. Bölüm: Acil Aksiyon Kartları -->
+    <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div *ngFor="let item of [
+      dashboardData.actionItems.ordersToShip,
+      dashboardData.actionItems.lowStockItems,
+      dashboardData.actionItems.pendingReviews
+    ]" class="p-4 flex items-center gap-4 bg-card border border-border rounded-lg shadow-sm">
+            <div class="p-3 rounded-full" [ngClass]="{
+        'bg-sky-500/10 text-sky-500': item.label.includes('Kargo'),
+        'bg-amber-500/10 text-amber-500': item.label.includes('Stok'),
+        'bg-purple-500/10 text-purple-500': item.label.includes('Yorum')
+      }">
+                <i class="text-2xl" [ngClass]="{
+                    'bi-box-seam': item.label.includes('Kargo'),
+                    'bi-archive': item.label.includes('Stok'),
+                    'bi-chat-left-dots': item.label.includes('Yorum')
+                    }"></i>
+            </div>
+            <div>
+                <p class="text-2xl font-bold">{{ item.count }}</p>
+                <p class="text-sm font-medium text-muted-foreground">{{ item.label }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Bölüm: Satış ve Ürün Analizleri -->
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+
+        <!-- Sol Taraf: Son Siparişler -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Satış Grafiği (Placeholder) -->
+            <div class="p-6 bg-card border border-border rounded-lg shadow-sm">
+                <h3 class="font-semibold mb-4">Satışlara Genel Bakış (Son 30 Gün)</h3>
+                <!-- Grafiğin çizileceği konteyner -->
+                <div class="relative h-80">
+                    <canvas #salesCanvas></canvas>
+                </div>
+            </div>
+
+            <!-- Son Siparişler Tablosu -->
+            <div class="bg-card border border-border rounded-lg shadow-sm">
+                <h3 class="font-semibold p-4 border-b">Son Siparişler</h3>
+                <table class="w-full">
+                    <tbody class="divide-y divide-border">
+                        <tr *ngFor="let order of dashboardData.salesOverview.recentOrders">
+                            <td class="p-4 font-medium">#{{ order.orderId }} - {{ order.customerName }}</td>
+                            <td class="p-4 text-muted-foreground">{{ order.orderDate | date:'dd.MM.yyyy HH:mm' }}</td>
+                            <td class="p-4 text-right">
+                                <span class="px-2 py-1 text-xs font-medium rounded-full"
+                                    [ngClass]="order.status | orderStatusColor">
+                                    {{ order.status | orderStatus }}
+                                </span>
+                            </td>
+                            <td class="p-4 font-bold text-right">{{ order.totalAmount | currency:'TRY' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sağ Taraf: En Çok Satanlar & Müşteri Aktivitesi -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- En Çok Satan Ürünler -->
+            <div class="p-4 bg-card border border-border rounded-lg shadow-sm">
+                <h3 class="font-semibold mb-4">En Çok Satan Ürünler</h3>
+                <ul class="space-y-3">
+                    <li *ngFor="let product of dashboardData.productInsights.bestSellingProducts"
+                        class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                            <i class="bi bi-tag-fill text-muted-foreground"></i>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium truncate">{{ product.productName }}</p>
+                            <p class="text-xs text-muted-foreground">{{ product.unitsSold }} adet satıldı</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- MADDE 6: Müşteri Aktivitesi -->
+            <div class="p-4 bg-card border border-border rounded-lg shadow-sm">
+                <h3 class="font-semibold mb-4">Müşteri Aktivitesi</h3>
+                <!-- Genel Puanlama -->
+                <div class="flex items-center justify-between p-3 mb-4 bg-amber-400/10 rounded-lg">
+                    <span class="font-medium text-amber-600">Genel Ürün Puanı</span>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-xl font-bold text-amber-700">{{
+                            dashboardData.customerActivity.overallProductRating.average | number:'1.1-1' }}</span>
+                        <i class="bi bi-star-fill text-amber-500"></i>
+                    </div>
+                </div>
+                <!-- Son Müşteriler -->
+                <h4 class="text-sm font-semibold text-muted-foreground mb-2">Son Kaydolanlar</h4>
+                <ul class="space-y-3">
+                    <li *ngFor="let customer of dashboardData.customerActivity.recentCustomers"
+                        class="flex items-center gap-3">
+                        <div
+                            class="w-10 h-10 rounded-full bg-muted flex items-center justify-center font-bold text-muted-foreground">
+                            {{ customer.fullName | slice:0:1 }}
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium">{{ customer.fullName }}</p>
+                            <p class="text-xs text-muted-foreground">{{ customer.joinDate | date:'dd.MM.yyyy' }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</div>

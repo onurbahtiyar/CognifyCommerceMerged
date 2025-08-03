@@ -21,6 +21,10 @@ import { CustomerListComponent } from './components/customer-list/customer-list.
 import { OrderListComponent } from './components/order-list/order-list.component';
 import { FilePreviewPipe } from './pipes/file-preview.pipe';
 import { ReviewManagementComponent } from './components/review-management/review-management.component';
+import { ExpenseListComponent } from './components/expense-list/expense-list.component';
+import { OrderStatusColorPipe } from './pipes/order-status-color.pipe';
+import { OrderStatusPipe } from './pipes/order-status.pipe';
+import { CustomToastComponent } from './components/custom-toast/custom-toast.component';
 
 @NgModule({
   declarations: [
@@ -34,7 +38,11 @@ import { ReviewManagementComponent } from './components/review-management/review
     CustomerListComponent,
     OrderListComponent,
     FilePreviewPipe,
-    ReviewManagementComponent
+    ReviewManagementComponent,
+    ExpenseListComponent,
+    OrderStatusPipe,
+    OrderStatusColorPipe,
+    CustomToastComponent
   ],
   imports: [
     BrowserModule,

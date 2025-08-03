@@ -1,0 +1,29 @@
+<div (click)="onToastClick()"
+  class="relative flex w-80 cursor-pointer items-start gap-4 overflow-hidden rounded-lg border-l-4 p-4 shadow-2xl md:w-96"
+  [ngClass]="{
+    'border-red-600 bg-red-50 text-red-900 dark:bg-red-900/40 dark:text-red-200': notification.type === 'Critical',
+    'border-yellow-500 bg-yellow-50 text-yellow-900 dark:bg-yellow-900/40 dark:text-yellow-200': notification.type === 'Warning',
+    'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200': notification.type === 'Info',
+    'border-green-500 bg-green-50 text-green-900 dark:bg-green-900/40 dark:text-green-200': notification.type === 'Success'
+  }">
+
+  <button (click)="onClose(); $event.stopPropagation()"
+    class="absolute right-2 top-2 text-inherit opacity-70 transition-opacity hover:opacity-100">
+    <i class="bi bi-x-lg text-sm"></i>
+  </button>
+
+  <div class="flex-shrink-0 pt-0.5 text-xl">
+    <i class="bi" [ngClass]="{
+      'bi-shield-fill-exclamation': notification.type === 'Critical',
+      'bi-exclamation-triangle-fill': notification.type === 'Warning',
+      'bi-info-circle-fill': notification.type === 'Info',
+      'bi-check-circle-fill': notification.type === 'Success'
+    }"></i>
+  </div>
+
+  <div class="flex-1">
+    <p class="font-semibold" [textContent]="notification.type + '!'"></p>
+    <p class="mt-1 text-sm" [textContent]="notification.message"></p>
+  </div>
+
+</div>
