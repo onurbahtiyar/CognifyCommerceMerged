@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Gemini Chat Streaming</title>
+    <style>
+        body {
+            font-family: Arial;
+            padding: 2rem;
+        }
+
+        #output {
+            border: 1px solid #ccc;
+            padding: 1rem;
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        #prompt {
+            width: 80%;
+            padding: .5rem;
+        }
+
+        #send {
+            padding: .5rem 1rem;
+        }
+
+        #output p {
+            margin: 0 0 .5rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>Gemini Chat (Stream)</h1>
+    <input id="prompt" type="text" placeholder="Sorunuzu yazın..." />
+    <button id="send">Gönder</button>
+    <hr />
+    <div id="output"></div>
+
+    <script>
+        const promptInput = document.getElementById('prompt');
+        const sendBtn = document.getElementById('send');
+        const outputDiv = document.getElementById('output');
+        let source;
+
+        sendBtn.addEventListener('click', () => {
+            const prompt = promptInput.value.trim();
+            if (!prompt) return;
+
+            if (source) source.close();
+            outputDiv.innerHTML = ''; 
+
+            source = new EventSource(`/api/chat/stream?prompt=${encodeURIComponent(prompt)}`);
+
+            source.onmessage = e => {
+                let text = e.data
+                    .replace(/```(?:sql)?\n?/g, '')
+                    .replace(/```/g, '');
+
+                const p = document.createElement('p');
+                p.textContent = text;
+                outputDiv.appendChild(p);
+
+                outputDiv.scrollTop = outputDiv.scrollHeight;
+            };
+
+            source.onerror = () => {
+                source.close();
+            };
+        });
+    </script>
+</body>
+</html>
