@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Router } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { CookieService } from 'ngx-cookie-service';
 
@@ -7,7 +8,10 @@ export class AuthService {
   private isLoggedInSubject = new BehaviorSubject<boolean>(this.hasToken());
   public isLoggedIn$ = this.isLoggedInSubject.asObservable();
 
-  constructor(private cookieService: CookieService) {}
+  constructor(
+    private cookieService: CookieService,
+    private router: Router
+  ) {}
 
   private hasToken(): boolean {
     return !!this.cookieService.get('authToken');
@@ -18,8 +22,11 @@ export class AuthService {
   }
 
   logout(): void {
-    this.cookieService.delete('authToken');
-    this.cookieService.delete('userInfo');
+    this.cookieService.delete('authToken', '/');
+    this.cookieService.delete('userInfo', '/');
+
     this.isLoggedInSubject.next(false);
+    
+    this.router.navigate(['/login']);
   }
 }

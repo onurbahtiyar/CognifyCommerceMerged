@@ -14,7 +14,7 @@ import { ThemeService } from 'src/app/services/theme.service';
   styleUrls: ['./login.component.scss']
 })
 export class LoginComponent {
-  loginData: LoginDto = { username: '', password: '' };
+  loginData: LoginDto = { username: 'info@onurbahtiyar.dev', password: '123456' };
   loading = false;
   
   // Footer için dinamik yıl

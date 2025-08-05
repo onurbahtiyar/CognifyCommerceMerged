@@ -19,18 +19,20 @@
     <div class="hidden w-1/2 flex-col justify-between bg-primary p-8 text-primary-foreground lg:flex">
       <div>
         <a routerLink="/" class="flex items-center gap-2 text-xl font-bold">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-            <span>CognifyCommerce</span>
+            <img src="assets/logo_white.png" alt="CognifyCommerce Logo" class="h-20 w-auto" />
+            <span>Cognify Commerce</span>
         </a>
+        <!-- DEĞİŞTİRİLDİ: Başlık daha dinamik ve fayda odaklı hale getirildi. -->
         <p class="mt-12 text-3xl font-semibold leading-snug">
-          Yapay Zeka Destekli<br>Ticaret Yönetimi
+          Yapay Zeka ile Büyüyün
         </p>
+        <!-- DEĞİŞTİRİLDİ: Açıklama, projenin en güçlü özelliği olan konuşma tabanlı veri sorgulamasını vurguluyor. -->
         <p class="mt-4 text-primary-foreground/80">
-          Verilerinizi saniyeler içinde analiz edin, sorgulayın ve görselleştirin.
+          Verilerinize "soru sorun". Stok durumundan müşteri analizine kadar her şeyi akıllı asistanınız saniyeler içinde yanıtlasın.
         </p>
       </div>
       <div class="text-xs text-primary-foreground/60">
-        © {{ currentYear }} CognifyCommerce. Tüm hakları saklıdır.
+        © {{ currentYear }} Cognify Commerce.
       </div>
     </div>
 
@@ -39,8 +41,10 @@
       <div class="flex w-full flex-col items-center justify-center">
         <div class="w-full max-w-sm">
           <div class="mb-8 text-center lg:text-left">
-            <h1 class="text-3xl font-bold tracking-tight text-foreground">Tekrar Hoş Geldin!</h1>
-            <p class="mt-2 text-muted-foreground">Hesabınıza erişmek için giriş yapın.</p>
+            <!-- DEĞİŞTİRİLDİ: Başlık daha davetkar ve platformun gücünü yansıtıyor. -->
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">Kontrol Merkezine Hoş Geldin!</h1>
+            <!-- DEĞİŞTİRİLDİ: Alt başlık, eyleme geçirici ve potansiyeli vurguluyor. -->
+            <p class="mt-2 text-muted-foreground">İşletmenizin potansiyelini ortaya çıkarmak için giriş yapın.</p>
           </div>
 
           <!-- Form -->
@@ -98,10 +102,13 @@
               <span class="bg-card px-2 text-muted-foreground">Veya</span>
             </div>
           </div>
-          <button class="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted">
-            <i class="bi bi-google text-red-500"></i>
-            <span>Google ile Giriş Yap</span>
-          </button>
+          
+          <!-- YENİ KAYIT LİNKİ -->
+          <a routerLink="/register" class="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Hesap Oluştur</span>
+          </a>
+          
         </div>
       </div>
     </div>

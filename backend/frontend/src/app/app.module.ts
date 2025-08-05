@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule, HTTP_INTERCEPTORS, HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -25,6 +25,10 @@ import { ExpenseListComponent } from './components/expense-list/expense-list.com
 import { OrderStatusColorPipe } from './pipes/order-status-color.pipe';
 import { OrderStatusPipe } from './pipes/order-status.pipe';
 import { CustomToastComponent } from './components/custom-toast/custom-toast.component';
+import { ServiceWorkerModule } from '@angular/service-worker';
+import { environment } from '../environments/environment';
+import { MarketplaceIntegrationsComponent } from './components/marketplace-integrations/marketplace-integrations.component';
+import { PresentationComponent } from './components/presentation/presentation.component';
 
 @NgModule({
   declarations: [
@@ -42,7 +46,9 @@ import { CustomToastComponent } from './components/custom-toast/custom-toast.com
     ExpenseListComponent,
     OrderStatusPipe,
     OrderStatusColorPipe,
-    CustomToastComponent
+    CustomToastComponent,
+    MarketplaceIntegrationsComponent,
+    PresentationComponent
   ],
   imports: [
     BrowserModule,
@@ -68,6 +74,10 @@ import { CustomToastComponent } from './components/custom-toast/custom-toast.com
       closeButton: true,
       progressBar: true,
       tapToDismiss: true,
+    }),
+    ServiceWorkerModule.register('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000'
     }),
   ],
   providers: [

@@ -12,6 +12,8 @@ import { CustomerListComponent } from './components/customer-list/customer-list.
 import { OrderListComponent } from './components/order-list/order-list.component';
 import { ReviewManagementComponent } from './components/review-management/review-management.component';
 import { ExpenseListComponent } from './components/expense-list/expense-list.component';
+import { MarketplaceIntegrationsComponent } from './components/marketplace-integrations/marketplace-integrations.component';
+import { PresentationComponent } from './components/presentation/presentation.component';
 
 const routes: Routes = [
   { path: 'login', component: LoginComponent, canActivate: [GuestGuard] },
@@ -24,6 +26,8 @@ const routes: Routes = [
   { path: 'orders', component: OrderListComponent, canActivate: [AuthGuard] },
   { path: 'reviews', component: ReviewManagementComponent, canActivate: [AuthGuard] },
   { path: 'expenses', component: ExpenseListComponent, canActivate: [AuthGuard] },
+  { path: 'marketplace-integrations', component: MarketplaceIntegrationsComponent, canActivate: [AuthGuard] },
+  { path: 'presentation', component: PresentationComponent },
   { path: '', redirectTo: '/login', pathMatch: 'full' }
 ];
 
