@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://localhost:7047/api/',
-  url: 'https://localhost:7047'
+  apiUrl: 'https://api.onurbahtiyar.dev/api/',
+  url: 'https://api.onurbahtiyar.dev'
 };

@@ -1,0 +1,72 @@
+<div class="flex min-h-screen flex-col items-center justify-center bg-gray-100 p-4 text-gray-900 dark:bg-gray-900 dark:text-white sm:p-6 md:p-8">
+
+  <div class="absolute top-6 right-6 z-30">
+    <button (click)="themeService.toggleTheme()"
+      class="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm transition-all duration-300 hover:bg-white/40 hover:scale-110 dark:bg-black/20 dark:hover:bg-black/40">
+      <i *ngIf="themeService.getTheme() === 'light'" class="bi bi-moon-stars-fill text-xl"></i>
+      <i *ngIf="themeService.getTheme() === 'dark'" class="bi bi-sun-fill text-xl"></i>
+      <span class="sr-only">Temayı Değiştir</span>
+    </button>
+  </div>
+
+  <div class="animate-fade-in-up w-full max-w-5xl">
+
+    <div class="mb-10 flex flex-col items-center text-center">
+      <img src="assets/logo.png" alt="CognifyCommerce Logo" class="h-24 w-auto mb-4 drop-shadow-lg" />
+      
+      <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl drop-shadow-md">
+        Cognify Commerce
+      </h1>
+      
+      <p class="mt-4 max-w-3xl text-lg text-gray-700 dark:text-gray-300 md:text-xl drop-shadow">
+        E-ticaret yönetimini yapay zeka ile nasıl yeniden şekillendirdiğimizi keşfedin. Aşağıdaki videodan projemizin tüm potansiyelini görebilirsiniz.
+      </p>
+    </div>
+
+    <div #playerContainer class="group relative w-full aspect-video overflow-hidden rounded-2xl shadow-2xl bg-black">
+      
+      <video #videoPlayer class="w-full h-full" (click)="togglePlayPause()">
+        <source src="assets/videos/presentation.mp4" type="video/mp4">
+        Tarayıcınız video etiketini desteklemiyor.
+      </video>
+      
+      <div class="absolute inset-0 grid place-items-center bg-black/20 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <button (click)="togglePlayPause()" class="grid h-20 w-20 place-items-center rounded-full bg-white/20 text-white backdrop-blur-md transition hover:scale-110 hover:bg-white/30">
+          <i class="text-5xl bi leading-none" [ngClass]="isPlaying ? 'bi-pause-fill' : 'bi-play-fill'"></i>
+        </button>
+      </div>
+
+      <div class="absolute bottom-0 left-0 right-0 flex flex-col bg-gradient-to-t from-black/80 to-transparent p-2 pt-0 sm:p-4 sm:pt-0 opacity-0 transition-all duration-300 group-hover:opacity-100">
+        
+        <div class="group/progress relative w-full h-5 cursor-pointer" (click)="scrub($event)">
+            <div class="w-full h-1 bg-white/30 rounded-full absolute top-1/2 -translate-y-1/2 transition-all group-hover/progress:h-1.5"></div>
+            <div class="h-1 bg-primary rounded-full absolute top-1/2 -translate-y-1/2 transition-all group-hover/progress:h-1.5" [style.width.%]="progress"></div>
+        </div>
+
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2 sm:gap-4">
+            <button (click)="togglePlayPause()" class="rounded-full p-2 text-white text-2xl transition hover:bg-white/20 hover:text-white"><i class="bi" [ngClass]="isPlaying ? 'bi-pause' : 'bi-play'"></i></button>
+            <button (click)="seek(-10)" class="rounded-full p-2 text-white text-2xl transition hover:bg-white/20 hover:text-white"><i class="bi bi-rewind"></i></button>
+            <button (click)="seek(10)" class="rounded-full p-2 text-white text-2xl transition hover:bg-white/20 hover:text-white"><i class="bi bi-fast-forward"></i></button>
+            <span class="text-white font-mono text-sm tracking-widest">{{ currentTime }} / {{ duration }}</span>
+          </div>
+          <button (click)="toggleFullscreen()" class="rounded-full p-2 text-white text-xl transition hover:bg-white/20 hover:text-white"><i class="bi bi-fullscreen"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-6 text-center">
+      <a routerLink="/dashboard"
+        class="inline-flex items-center justify-center rounded-full bg-primary px-10 py-4 text-lg font-bold text-primary-foreground shadow-2xl shadow-primary/30 transition-all duration-300 hover:scale-105 hover:shadow-primary/50 focus:outline-none focus:ring-4 focus:ring-primary/50">
+        <i class="bi bi-rocket-takeoff-fill mr-3 text-xl"></i>
+        Demoyu Keşfetmeye Başla
+      </a>
+    </div>
+
+  </div>
+
+  <div class="pointer-events-none fixed bottom-6 right-6 z-30">
+    <img src="assets/hackathon_light.png" alt="Hackathon" class="h-10 w-auto block dark:hidden">
+    <img src="assets/hackathon_dark.png" alt="Hackathon" class="h-10 w-auto hidden dark:block">
+  </div>
+</div>

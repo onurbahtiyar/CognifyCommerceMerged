@@ -7,14 +7,49 @@
       <p class="mt-1 text-muted-foreground">Mevcut siparişleri görüntüleyin veya yeni sipariş oluşturun.</p>
     </div>
     <button (click)="openAddPanel()"
-            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+      class="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
       <i class="bi bi-box-seam"></i>
       <span>Yeni Sipariş Oluştur</span>
     </button>
   </header>
 
-  <!-- Sipariş Tablosu -->
-  <div class="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+  <!-- Yüklenme ve Boş Liste Durumları -->
+  <div *ngIf="loading" class="p-8 text-center text-muted-foreground">
+    <i class="bi bi-arrow-clockwise animate-spin mr-2 text-2xl"></i> Yükleniyor...
+  </div>
+  <div *ngIf="!loading && orders.length === 0"
+    class="p-8 text-center text-muted-foreground rounded-lg border-2 border-dashed">
+    Gösterilecek sipariş bulunamadı.
+  </div>
+
+  <!-- MOBİL GÖRÜNÜM: Kart Listesi (md breakpoint'ine kadar görünür) -->
+  <div *ngIf="!loading && orders.length > 0" class="space-y-4 md:hidden">
+    <div *ngFor="let order of orders" class="rounded-lg border bg-card p-4 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+          <p class="text-sm font-semibold text-primary">#{{order.orderId}}</p>
+          <h3 class="font-medium text-foreground">{{ order.customerFullName }}</h3>
+          <p class="text-xs text-muted-foreground">{{order.orderDate | date:'dd.MM.yyyy HH:mm'}}</p>
+        </div>
+        <div class="text-right">
+          <p class="font-semibold">{{order.totalAmount | currency:'TRY'}}</p>
+          <span class="mt-1 inline-block rounded-full px-2 py-0.5 text-xs font-medium"
+            [ngClass]="getStatusClass(order.orderStatusCode)">
+            {{getOrderStatusText(order.orderStatusCode)}}
+          </span>
+        </div>
+      </div>
+      <button (click)="openViewPanel(order)" title="Detayları Görüntüle"
+        class="mt-3 w-full inline-flex items-center justify-center gap-2 rounded-md border bg-muted/50 px-4 py-2 text-sm font-medium transition-colors hover:bg-muted">
+        <i class="bi bi-eye-fill"></i>
+        <span>Detayları Görüntüle</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- MASAÜSTÜ GÖRÜNÜM: Tablo (md breakpoint'inden itibaren görünür) -->
+  <div *ngIf="!loading && orders.length > 0"
+    class="hidden overflow-hidden rounded-lg border bg-card shadow-sm md:block">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-muted/50">
@@ -28,28 +63,23 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-border">
-          <tr *ngIf="loading">
-            <td colspan="6" class="p-8 text-center"><i class="bi bi-arrow-clockwise animate-spin mr-2"></i> Yükleniyor...</td>
-          </tr>
-          <tr *ngIf="!loading && orders.length === 0">
-            <td colspan="6" class="p-8 text-center text-muted-foreground">Gösterilecek sipariş bulunamadı.</td>
-          </tr>
           <tr *ngFor="let order of orders" class="hover:bg-muted/50">
             <td class="p-4 align-middle font-semibold">#{{order.orderId}}</td>
             <td class="p-4 align-middle">{{order.customerFullName}}</td>
             <td class="p-4 align-middle text-muted-foreground">{{order.orderDate | date:'dd.MM.yyyy HH:mm'}}</td>
             <td class="p-4 text-center align-middle">
-              <span class="rounded-full px-2 py-1 text-xs font-medium" [ngClass]="getStatusClass(order.orderStatusCode)">
+              <span class="rounded-full px-2 py-1 text-xs font-medium"
+                [ngClass]="getStatusClass(order.orderStatusCode)">
                 {{getOrderStatusText(order.orderStatusCode)}}
               </span>
             </td>
             <td class="p-4 text-right align-middle font-medium">{{order.totalAmount | currency:'TRY'}}</td>
-<td class="p-4 flex justify-center align-middle">
-  <button (click)="openViewPanel(order)" title="Detayları Görüntüle"
-          class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted">
-    <i class="bi bi-eye-fill"></i>
-  </button>
-</td>
+            <td class="p-4 text-center align-middle">
+              <button (click)="openViewPanel(order)" title="Detayları Görüntüle"
+                class="flex h-8 w-8 mx-auto items-center justify-center rounded-md border transition-colors hover:bg-muted">
+                <i class="bi bi-eye-fill"></i>
+              </button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -61,194 +91,194 @@
 <div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
   <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
-  <!-- PANEL İÇERİĞİ -->
-  <aside class="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l bg-card">
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-3xl flex-col border-l bg-card">
     <header class="flex h-16 shrink-0 items-center justify-between border-b px-6">
-      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Sipariş Oluştur' : 'Sipariş Detayları (#' + selectedOrder?.orderId + ')' }}</h2>
-      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted">
-        <i class="bi bi-x-lg"></i>
-      </button>
+      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Sipariş Oluştur' : 'Sipariş Detayları (#' +
+        selectedOrder?.orderId + ')' }}</h2>
+      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted"><i
+          class="bi bi-x-lg"></i></button>
     </header>
 
-    <!-- ************************************ -->
-    <!-- ***** YENİ SİPARİŞ OLUŞTURMA FORMU ***** -->
-    <!-- ************************************ -->
+    <!-- Yeni Sipariş Formu -->
     <ng-container *ngIf="panelMode === 'add'">
-      <main class="flex-1 overflow-y-auto p-6 space-y-6">
-        <!-- 1. Adım: Müşteri Seçimi -->
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        <!-- Adım 1: Müşteri Seçimi -->
         <div class="space-y-2">
           <h3 class="font-medium text-foreground">1. Adım: Müşteri Seçimi</h3>
-          <input type="text" placeholder="Müşteri ara (Ad, Soyad veya E-posta)..." [(ngModel)]="customerSearchText" (ngModelChange)="filterCustomers()"
-                 class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
-          <div *ngIf="newOrder.customerId" class="flex items-center gap-2 p-2 bg-green-500/10 text-green-700 rounded-md">
+          <input type="text" placeholder="Müşteri ara..." [(ngModel)]="customerSearchText"
+            (ngModelChange)="filterCustomers()" class="w-full rounded-md border-input bg-background p-2">
+          <div *ngIf="newOrder.customerId"
+            class="flex items-center gap-2 p-2 bg-green-500/10 text-green-700 rounded-md">
             <i class="bi bi-check-circle-fill"></i>
             <span><b>{{ getSelectedCustomerName() }}</b> adlı müşteri seçildi.</span>
-            <button (click)="newOrder.customerId = 0" class="ml-auto text-sm hover:underline">Değiştir</button>
+            <button (click)="newOrder.customerId = 0; newOrder.shippingAddress = ''"
+              class="ml-auto text-sm hover:underline">Değiştir</button>
           </div>
-          <ul *ngIf="!newOrder.customerId && customerSearchText" class="max-h-40 overflow-y-auto border rounded-md">
+          <ul *ngIf="!newOrder.customerId && customerSearchText"
+            class="max-h-40 overflow-y-auto border rounded-md bg-background">
             <li *ngFor="let customer of filteredCustomers" (click)="selectCustomer(customer)"
-                class="p-2 hover:bg-muted cursor-pointer">{{customer.firstName}} {{customer.lastName}} ({{customer.email}})</li>
+              class="p-2 hover:bg-muted cursor-pointer">{{customer.firstName}} {{customer.lastName}}
+              ({{customer.email}})</li>
             <li *ngIf="filteredCustomers.length === 0" class="p-2 text-muted-foreground">Sonuç bulunamadı.</li>
           </ul>
         </div>
-        
-        <!-- 2. Adım: Ürün Ekleme -->
+
+        <!-- Adım 2: Ürün Ekleme -->
         <div class="space-y-2">
           <h3 class="font-medium text-foreground">2. Adım: Ürün Ekleme</h3>
           <div class="relative">
-            <input type="text" placeholder="Ürün ara..." [(ngModel)]="productSearchText" (ngModelChange)="filterProducts()" [disabled]="!newOrder.customerId"
-                   class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring disabled:bg-muted/50">
-            <ul *ngIf="productSearchText" class="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto border rounded-md bg-card shadow-lg">
+            <input type="text" placeholder="Ürün ara..." [(ngModel)]="productSearchText"
+              (ngModelChange)="filterProducts()" [disabled]="!newOrder.customerId"
+              class="w-full rounded-md border-input bg-background p-2 disabled:bg-muted/50">
+            <ul *ngIf="productSearchText"
+              class="absolute z-10 w-full mt-1 max-h-48 overflow-y-auto border rounded-md bg-card shadow-lg">
               <li *ngFor="let product of filteredProducts" (click)="addProductToCart(product)"
-                  class="p-2 hover:bg-muted cursor-pointer flex justify-between">
-                <span>{{product.name}}</span>
-                <span class="text-muted-foreground">{{product.price | currency:'TRY'}} - Stok: {{product.stock}}</span>
+                class="p-2 hover:bg-muted cursor-pointer flex justify-between">
+                <span>{{product.name}}</span><span class="text-muted-foreground">{{product.price | currency:'TRY'}} -
+                  Stok: {{product.stock}}</span>
               </li>
               <li *ngIf="filteredProducts.length === 0" class="p-2 text-muted-foreground">Sonuç bulunamadı.</li>
             </ul>
           </div>
         </div>
 
-        <!-- 3. Adım: Sipariş Sepeti -->
+        <!-- Adım 3: Sipariş Sepeti -->
         <div class="space-y-2">
-            <h3 class="font-medium text-foreground">3. Adım: Sipariş Sepeti</h3>
-            <div class="border rounded-md">
-                <table class="w-full text-sm">
-                    <thead class="bg-muted/50">
-                        <tr>
-                            <th class="p-2 text-left font-medium">Ürün</th>
-                            <th class="p-2 text-center font-medium">Adet</th>
-                            <th class="p-2 text-right font-medium">Birim Fiyat</th>
-                            <th class="p-2 text-right font-medium">Ara Toplam</th>
-                            <th class="p-2 text-center font-medium"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="cartItems.length === 0">
-                            <td colspan="5" class="p-4 text-center text-muted-foreground">Sepetiniz boş.</td>
-                        </tr>
-                        <tr *ngFor="let item of cartItems" class="border-t">
-                            <td class="p-2 font-medium">{{item.name}}</td>
-                            <td class="p-2 w-24">
-                                <input type="number" min="1" [max]="item.originalStock" [(ngModel)]="item.quantity" (ngModelChange)="calculateTotal()"
-                                       class="w-full text-center rounded-md border-input bg-background p-1">
-                            </td>
-                            <td class="p-2 text-right">{{item.price | currency:'TRY'}}</td>
-                            <td class="p-2 text-right font-semibold">{{ (item.price * item.quantity) | currency:'TRY' }}</td>
-                            <td class="p-2 text-center">
-                                <button (click)="removeFromCart(item.productId)" class="text-destructive hover:opacity-75"><i class="bi bi-x-circle-fill"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="text-right font-bold text-lg">Toplam: {{cartTotal | currency:'TRY'}}</div>
+          <h3 class="font-medium text-foreground">3. Adım: Sipariş Sepeti</h3>
+          <div class="border rounded-md overflow-x-auto">
+            <table class="w-full text-sm min-w-[500px]">
+              <thead class="bg-muted/50">
+                <tr>
+                  <th class="p-2 text-left font-medium">Ürün</th>
+                  <th class="p-2 w-24 text-center font-medium">Adet</th>
+                  <th class="p-2 text-right font-medium">Birim Fiyat</th>
+                  <th class="p-2 text-right font-medium">Ara Toplam</th>
+                  <th class="p-2 w-12 text-center font-medium"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="cartItems.length === 0">
+                  <td colspan="5" class="p-4 text-center text-muted-foreground">Sepetiniz boş.</td>
+                </tr>
+                <tr *ngFor="let item of cartItems" class="border-t">
+                  <td class="p-2 font-medium">{{item.name}}</td>
+                  <td class="p-2"><input type="number" min="1" [max]="item.originalStock" [(ngModel)]="item.quantity"
+                      (ngModelChange)="calculateTotal()"
+                      class="w-full text-center rounded-md border-input bg-background p-1"></td>
+                  <td class="p-2 text-right">{{item.price | currency:'TRY'}}</td>
+                  <td class="p-2 text-right font-semibold">{{ (item.price * item.quantity) | currency:'TRY' }}</td>
+                  <td class="p-2 text-center"><button (click)="removeFromCart(item.productId)"
+                      class="text-destructive hover:opacity-75"><i class="bi bi-x-circle-fill"></i></button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div *ngIf="cartItems.length > 0" class="text-right font-bold text-lg">Toplam: {{cartTotal | currency:'TRY'}}
+          </div>
         </div>
 
-        <!-- 4. Adım: Teslimat Adresi -->
+        <!-- Adım 4: Teslimat Adresi -->
         <div class="space-y-2">
-            <h3 class="font-medium text-foreground">4. Adım: Teslimat Adresi</h3>
-            <textarea [(ngModel)]="newOrder.shippingAddress" rows="3" required
-                      class="w-full resize-y rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"
-                      placeholder="Müşterinin teslimat adresini girin..."></textarea>
+          <h3 class="font-medium text-foreground">4. Adım: Teslimat Adresi</h3>
+          <textarea [(ngModel)]="newOrder.shippingAddress" rows="3" required
+            class="w-full resize-y rounded-md border-input bg-background p-2"
+            placeholder="Müşterinin teslimat adresini girin..."></textarea>
         </div>
       </main>
-      <footer class="flex shrink-0 items-center justify-end gap-2 border-t p-4">
-        <button type="button" (click)="closePanel()" class="rounded-md border bg-transparent px-4 py-2 hover:bg-accent">İptal</button>
-        <button type="button" (click)="createOrder()" [disabled]="!newOrder.customerId || cartItems.length === 0 || !newOrder.shippingAddress"
-                class="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-          Siparişi Oluştur
-        </button>
+      <footer class="flex shrink-0 items-center justify-end gap-2 border-t p-4 bg-muted/50">
+        <button type="button" (click)="closePanel()"
+          class="rounded-md border bg-transparent px-4 py-2 hover:bg-accent">İptal</button>
+        <button type="button" (click)="createOrder()"
+          [disabled]="!newOrder.customerId || cartItems.length === 0 || !newOrder.shippingAddress"
+          class="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50">Siparişi
+          Oluştur</button>
       </footer>
     </ng-container>
 
-    <!-- ************************************ -->
-    <!-- ***** SİPARİŞ DETAY GÖRÜNTÜLEME ***** -->
-    <!-- ************************************ -->
+    <!-- Sipariş Detay Görünümü -->
     <ng-container *ngIf="panelMode === 'view' && selectedOrder">
-      <main class="flex-1 overflow-y-auto p-6 grid grid-cols-3 gap-6">
-        <!-- Sol Sütun: Sipariş ve Müşteri Bilgileri -->
-        <div class="col-span-3 lg:col-span-2 space-y-6">
-          <!-- Ürün Listesi -->
-          <div>
-            <h3 class="font-medium mb-2">Sipariş İçeriği</h3>
-            <ul class="divide-y border rounded-md">
-              <li *ngFor="let item of selectedOrder.items" class="flex items-center justify-between p-3">
-                <div class="flex items-center gap-3">
-                  <div class="bg-muted rounded-md w-12 h-12 flex items-center justify-center font-bold text-muted-foreground">
-                    x{{item.quantity}}
+      <main class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Sol Sütun: Sipariş ve Kargo (Mobilde üstte) -->
+          <div class="lg:col-span-2 space-y-6">
+            <!-- Ürün Listesi -->
+            <div>
+              <h3 class="font-medium mb-2">Sipariş İçeriği</h3>
+              <ul class="divide-y border rounded-md">
+                <li *ngFor="let item of selectedOrder.items" class="flex items-center justify-between p-3">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="bg-muted rounded-md w-12 h-12 flex-shrink-0 flex items-center justify-center font-bold text-muted-foreground">
+                      x{{item.quantity}}</div>
+                    <div class="flex-1">
+                      <div class="font-medium">{{item.productName}}</div>
+                      <div class="text-sm text-muted-foreground">{{item.unitPrice | currency:'TRY'}}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div class="font-medium">{{item.productName}}</div>
-                    <div class="text-sm text-muted-foreground">{{item.unitPrice | currency:'TRY'}}</div>
-                  </div>
-                </div>
-                <div class="font-semibold">{{item.subTotal | currency:'TRY'}}</div>
-              </li>
-              <li class="flex justify-between items-center p-3 bg-muted/50 font-bold">
-                <span>TOPLAM</span>
-                <span>{{selectedOrder.totalAmount | currency:'TRY'}}</span>
-              </li>
-            </ul>
-          </div>
-          <!-- Kargo Bilgileri -->
-          <div>
-             <h3 class="font-medium mb-2">Kargo Bilgileri</h3>
-             <div class="p-4 border rounded-md space-y-3">
+                  <div class="font-semibold">{{item.subTotal | currency:'TRY'}}</div>
+                </li>
+                <li class="flex justify-between items-center p-3 bg-muted/50 font-bold">
+                  <span>TOPLAM</span><span>{{selectedOrder.totalAmount | currency:'TRY'}}</span></li>
+              </ul>
+            </div>
+            <!-- Kargo Bilgileri -->
+            <div>
+              <h3 class="font-medium mb-2">Kargo Bilgileri</h3>
+              <div class="p-4 border rounded-md space-y-3">
                 <p class="text-muted-foreground">{{selectedOrder.shippingAddress}}</p>
                 <form #shippingForm="ngForm" (ngSubmit)="updateShippingInfo()" class="space-y-3">
                   <select name="shipperId" [(ngModel)]="updateShippingDto.shipperId" required
-                          class="w-full rounded-md border-input bg-background p-2">
-                     <option [ngValue]="null" disabled>Kargo firması seçin...</option>
-                     <option *ngFor="let shipper of shippers" [value]="shipper.shipperId">{{shipper.companyName}}</option>
+                    class="w-full rounded-md border-input bg-background p-2">
+                    <option [ngValue]="null" disabled>Kargo firması seçin...</option>
+                    <option *ngFor="let shipper of shippers" [value]="shipper.shipperId">{{shipper.companyName}}
+                    </option>
                   </select>
                   <input type="text" name="trackingCode" [(ngModel)]="updateShippingDto.shippingTrackingCode" required
-                         placeholder="Kargo takip kodunu girin..." class="w-full rounded-md border-input bg-background p-2">
+                    placeholder="Kargo takip kodunu girin..." class="w-full rounded-md border-input bg-background p-2">
                   <button type="submit" [disabled]="shippingForm.invalid"
-                          class="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50">
-                     Kargo Bilgilerini Güncelle
-                  </button>
+                    class="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50">Kargo
+                    Bilgilerini Güncelle</button>
                 </form>
-             </div>
-          </div>
-        </div>
-
-        <!-- Sağ Sütun: Durum ve Eylemler -->
-        <div class="col-span-3 lg:col-span-1 space-y-6">
-          <!-- Durum Yönetimi -->
-          <div>
-            <h3 class="font-medium mb-2">Sipariş Durumu</h3>
-            <div class="p-4 border rounded-md space-y-3">
-              <div class="p-2 text-center rounded-md font-medium" [ngClass]="getStatusClass(selectedOrder.orderStatusCode)">
-                {{ getOrderStatusText(selectedOrder.orderStatusCode) }}
               </div>
-              <select [(ngModel)]="updateStatusDto.newStatus" class="w-full rounded-md border-input bg-background p-2">
-                <option *ngFor="let status of orderStatusList" [value]="status.key">{{status.value}}</option>
-              </select>
-              <button (click)="changeStatus()" [disabled]="updateStatusDto.newStatus === selectedOrder.orderStatusCode"
-                      class="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
-                Durumu Değiştir
-              </button>
             </div>
           </div>
-          <!-- Müşteri Bilgileri -->
-          <div>
-             <h3 class="font-medium mb-2">Müşteri Bilgileri</h3>
-             <div class="p-4 border rounded-md text-sm">
+
+          <!-- Sağ Sütun: Durum ve Eylemler (Mobilde altta) -->
+          <div class="lg:col-span-1 space-y-6">
+            <!-- Durum Yönetimi -->
+            <div>
+              <h3 class="font-medium mb-2">Sipariş Durumu</h3>
+              <div class="p-4 border rounded-md space-y-3">
+                <div class="p-2 text-center rounded-md font-medium"
+                  [ngClass]="getStatusClass(selectedOrder.orderStatusCode)">{{
+                  getOrderStatusText(selectedOrder.orderStatusCode) }}</div>
+                <select [(ngModel)]="updateStatusDto.newStatus"
+                  class="w-full rounded-md border-input bg-background p-2">
+                  <option *ngFor="let status of orderStatusList" [value]="status.key">{{status.value}}</option>
+                </select>
+                <button (click)="changeStatus()"
+                  [disabled]="updateStatusDto.newStatus === selectedOrder.orderStatusCode"
+                  class="w-full rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50">Durumu
+                  Değiştir</button>
+              </div>
+            </div>
+            <!-- Müşteri Bilgileri -->
+            <div>
+              <h3 class="font-medium mb-2">Müşteri Bilgileri</h3>
+              <div class="p-4 border rounded-md text-sm">
                 <div class="font-semibold">{{selectedOrder.customerFullName}}</div>
                 <div class="text-muted-foreground">ID: {{selectedOrder.customerId}}</div>
-             </div>
-          </div>
-          <!-- Diğer Eylemler -->
-          <div>
-            <h3 class="font-medium mb-2">Diğer İşlemler</h3>
-            <button (click)="confirmCancel()" *ngIf="canBeCancelled(selectedOrder.orderStatusCode)"
-                    class="w-full flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-destructive-foreground hover:bg-destructive/90">
-              <i class="bi bi-x-octagon-fill"></i> Siparişi İptal Et
-            </button>
-            <p *ngIf="!canBeCancelled(selectedOrder.orderStatusCode)" class="text-sm text-muted-foreground p-2 text-center border rounded-md">
-                Bu sipariş iptal edilemez.
-            </p>
+              </div>
+            </div>
+            <!-- Diğer Eylemler -->
+            <div>
+              <h3 class="font-medium mb-2">Diğer İşlemler</h3>
+              <button (click)="confirmCancel()" *ngIf="canBeCancelled(selectedOrder.orderStatusCode)"
+                class="w-full flex items-center justify-center gap-2 rounded-md bg-destructive px-4 py-2 text-destructive-foreground hover:bg-destructive/90"><i
+                  class="bi bi-x-octagon-fill"></i> Siparişi İptal Et</button>
+              <p *ngIf="!canBeCancelled(selectedOrder.orderStatusCode)"
+                class="text-sm text-muted-foreground p-2 text-center border rounded-md">Bu sipariş iptal edilemez.</p>
+            </div>
           </div>
         </div>
       </main>
