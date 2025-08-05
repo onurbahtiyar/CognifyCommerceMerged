@@ -1,0 +1,319 @@
+<div class="space-y-6">
+
+  <!-- Sayfa Başlığı ve Buton Alanı (Responsive) -->
+  <header class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Ürün Yönetimi</h1>
+      <p class="mt-1 text-muted-foreground">Mevcut ürünleri görüntüleyin, düzenleyin veya yeni ürün ekleyin.</p>
+    </div>
+    <button (click)="openAddPanel()"
+      class="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+      <i class="bi bi-plus-circle-fill"></i>
+      <span>Yeni Ürün Ekle</span>
+    </button>
+  </header>
+
+  <!-- Yüklenme ve Boş Liste Durumları -->
+  <div *ngIf="loading" class="p-8 text-center text-muted-foreground">
+    <i class="bi bi-arrow-clockwise animate-spin mr-2 text-2xl"></i> Yükleniyor...
+  </div>
+  <div *ngIf="!loading && products.length === 0"
+    class="p-8 text-center text-muted-foreground rounded-lg border-2 border-dashed">
+    Henüz hiç ürün eklenmemiş.
+  </div>
+
+  <!-- MOBİL GÖRÜNÜM: Kart Listesi (md breakpoint'ine kadar görünür) -->
+  <div *ngIf="!loading && products.length > 0" class="space-y-4 md:hidden">
+    <div *ngFor="let product of products" class="rounded-lg border bg-card p-4 shadow-sm flex gap-4">
+      <!-- Görsel -->
+      <div class="w-20 h-20 shrink-0 overflow-hidden rounded-md border">
+        <img *ngIf="product.imageUrl; else placeholder" [src]="environment.url + product.imageUrl"
+          alt="{{ product.name }}" class="object-cover w-full h-full" />
+        <ng-template #placeholder>
+          <div class="flex items-center justify-center bg-muted text-xs text-muted-foreground w-full h-full">Görsel Yok
+          </div>
+        </ng-template>
+      </div>
+      <!-- Bilgiler ve Butonlar -->
+      <div class="flex-1 flex flex-col justify-between">
+        <div>
+          <h3 class="font-semibold text-foreground leading-tight">{{ product.name }}</h3>
+          <p class="text-sm text-muted-foreground">{{ product.categoryName }}</p>
+        </div>
+        <div class="flex items-center justify-between mt-2">
+          <div class="text-sm font-semibold text-primary">{{ product.price | currency:'TRY' }}</div>
+          <div class="text-xs text-muted-foreground">Stok: {{ product.stock }}</div>
+        </div>
+      </div>
+      <!-- Aksiyon Butonları -->
+      <div class="flex flex-col gap-2 shrink-0">
+        <button (click)="openAnalysisModal(product)" title="Fiyat Analizi Yap"
+          class="flex h-8 w-8 items-center justify-center rounded-md border border-sky-500/50 text-sky-500 transition-colors hover:bg-sky-500 hover:text-white"><i
+            class="bi bi-search"></i></button>
+        <button (click)="openEditPanel(product)" title="Düzenle"
+          class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"><i
+            class="bi bi-pencil-square"></i></button>
+        <button (click)="confirmDelete(product.productId)" title="Sil"
+          class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i
+            class="bi bi-trash3-fill"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASAÜSTÜ GÖRÜNÜM: Tablo (md breakpoint'inden itibaren görünür) -->
+  <div *ngIf="!loading && products.length > 0"
+    class="hidden overflow-hidden rounded-lg border bg-card shadow-sm md:block">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-muted/50">
+          <tr>
+            <th class="h-12 w-[80px] px-4 text-left align-middle font-medium text-muted-foreground">Görsel</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ürün Adı</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Fiyat</th>
+            <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Stok</th>
+            <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <tr *ngFor="let product of products" class="hover:bg-muted/50">
+            <td class="p-2 align-middle">
+              <div class="w-12 h-12 overflow-hidden rounded-md border">
+                <img *ngIf="product.imageUrl; else placeholderDesktop" [src]="environment.url + product.imageUrl"
+                  alt="{{ product.name }}" class="object-cover w-full h-full" />
+                <ng-template #placeholderDesktop>
+                  <div class="flex items-center justify-center bg-muted text-xs text-muted-foreground w-full h-full">Yok
+                  </div>
+                </ng-template>
+              </div>
+            </td>
+            <td class="p-4 align-middle font-medium text-foreground">{{ product.name }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ product.categoryName }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ product.price | currency:'TRY':'symbol':'1.2-2' }}
+            </td>
+            <td class="p-4 text-center align-middle text-muted-foreground">{{ product.stock }}</td>
+            <td class="p-4 text-right align-middle">
+              <div class="inline-flex items-center gap-2">
+                <button (click)="openAnalysisModal(product)" title="Fiyat Analizi Yap"
+                  class="flex h-8 w-8 items-center justify-center rounded-md border border-sky-500/50 text-sky-500 transition-colors hover:bg-sky-500 hover:text-white"><i
+                    class="bi bi-search"></i></button>
+                <button (click)="openEditPanel(product)" title="Düzenle"
+                  class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"><i
+                    class="bi bi-pencil-square"></i></button>
+                <button (click)="confirmDelete(product.productId)" title="Sil"
+                  class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i
+                    class="bi bi-trash3-fill"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Yandan Açılır Panel (Sheet) -->
+<div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
+  <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-2xl flex-col border-l bg-card">
+
+    <header class="flex h-16 shrink-0 items-center justify-between border-b px-6">
+      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Ürün Ekle' : 'Ürünü Düzenle' }}</h2>
+      <button (click)="closePanel()"
+        class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"><i
+          class="bi bi-x-lg"></i></button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto">
+      <!-- Yeni Ürün Ekleme Formu -->
+      <form *ngIf="panelMode === 'add'" #addForm="ngForm" class="flex flex-col h-full">
+        <div class="p-6 space-y-4 flex-1">
+          <!-- Temel Bilgiler -->
+          <div>
+            <label for="add-name" class="mb-1.5 block text-sm font-medium">Ürün Adı</label>
+            <input id="add-name" type="text" name="name" [(ngModel)]="newProduct.name" required
+              class="w-full rounded-md border-input bg-background p-2">
+          </div>
+          <div>
+            <label for="add-category" class="mb-1.5 block text-sm font-medium">Kategori</label>
+            <select id="add-category" name="categoryId" [(ngModel)]="newProduct.categoryId" required
+              class="w-full rounded-md border-input bg-background p-2">
+              <option [ngValue]="null" disabled>Kategori seçin...</option>
+              <option *ngFor="let cat of categories" [value]="cat.categoryId">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="add-description" class="mb-1.5 block text-sm font-medium">Açıklama</label>
+            <textarea id="add-description" name="description" [(ngModel)]="newProduct.description" rows="4"
+              class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="add-price" class="mb-1.5 block text-sm font-medium">Fiyat (TL)</label>
+              <input id="add-price" type="number" name="price" [(ngModel)]="newProduct.price" required min="0"
+                class="w-full rounded-md border-input bg-background p-2">
+            </div>
+            <div>
+              <label for="add-stock" class="mb-1.5 block text-sm font-medium">Stok Adedi</label>
+              <input id="add-stock" type="number" name="stock" [(ngModel)]="newProduct.stock" required min="0"
+                class="w-full rounded-md border-input bg-background p-2">
+            </div>
+          </div>
+
+          <!-- Görsel Geliştirme Alanı -->
+          <div class="space-y-4 rounded-lg border p-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-semibold">Görsel Yükleme & Geliştirme</h3>
+              <span *ngIf="isEnhancing" class="inline-flex items-center gap-1 text-xs text-primary"><i
+                  class="bi bi-arrow-clockwise animate-spin"></i> Geliştiriliyor...</span>
+            </div>
+            <div class="flex flex-col lg:flex-row gap-4">
+              <div class="flex-1 space-y-3">
+                <textarea name="enhanceInstruction" [(ngModel)]="enhanceInstruction" rows="2"
+                  placeholder="Görsel talimatı girin (örn: arka planı beyaz yap)"
+                  class="w-full text-sm rounded-md border-input bg-background p-2"></textarea>
+                <input type="file" (change)="onFileSelected($event)" accept="image/*" #fileInput
+                  class="block w-full text-sm text-muted-foreground file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20" />
+              </div>
+              <div class="flex-1 grid grid-cols-2 gap-3">
+                <div class="text-center"><span class="text-xs font-medium text-muted-foreground">Orijinal</span>
+                  <div class="mt-1 w-full h-24 rounded border flex items-center justify-center bg-muted/50"><img
+                      *ngIf="uploadedFile" [src]="uploadedFile | filePreview"
+                      class="object-contain max-h-full max-w-full"><span *ngIf="!uploadedFile"
+                      class="text-xs text-muted-foreground">Yok</span></div>
+                </div>
+                <div class="text-center"><span class="text-xs font-medium text-muted-foreground">Geliştirilmiş</span>
+                  <div class="mt-1 w-full h-24 rounded border flex items-center justify-center bg-muted/50"><img
+                      *ngIf="tempImageUrl" [src]="environment.url + tempImageUrl"
+                      class="object-contain max-h-full max-w-full"><span *ngIf="!tempImageUrl"
+                      class="text-xs text-muted-foreground">Yok</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" (click)="enhanceImageForNewProduct()" [disabled]="!uploadedFile || isEnhancing"
+                class="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"><i
+                  class="bi bi-stars"></i><span>Geliştir</span></button>
+              <button type="button" (click)="fileInput.value = ''; uploadedFile = undefined; tempImageUrl = null"
+                class="inline-flex items-center gap-2 rounded-md border bg-transparent px-3 py-2 text-sm font-medium hover:bg-accent"><i
+                  class="bi bi-x-lg"></i><span>Temizle</span></button>
+            </div>
+          </div>
+        </div>
+        <!-- Footer Butonlar -->
+        <div class="flex shrink-0 items-center justify-end gap-2 border-t p-4 bg-muted/20">
+          <button type="button" (click)="closePanel()"
+            class="rounded-md border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+          <button type="button" (click)="openAnalysisModalForNewProduct()" [disabled]="!newProduct.name"
+            class="rounded-md border border-sky-500 px-4 py-2 text-sm font-medium text-sky-600 hover:bg-sky-500/10">Fiyat
+            Analizi</button>
+          <button type="submit" (click)="saveNewProductWithImage(addForm)" [disabled]="addForm.invalid || isEnhancing"
+            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">Ürünü
+            Kaydet</button>
+        </div>
+      </form>
+
+      <!-- Ürün Düzenleme Formu -->
+      <form *ngIf="panelMode === 'edit' && selectedProduct" #editForm="ngForm" (ngSubmit)="updateProduct(editForm)"
+        class="flex flex-col h-full">
+        <div class="p-6 space-y-4 flex-1">
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">Ürün Adı</label>
+            <input type="text" name="name" [(ngModel)]="selectedProduct.name" required
+              class="w-full rounded-md border-input bg-background p-2">
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">Kategori</label>
+            <select name="categoryId" [(ngModel)]="selectedProduct.categoryId" required
+              class="w-full rounded-md border-input bg-background p-2">
+              <option *ngFor="let cat of categories" [value]="cat.categoryId">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-sm font-medium">Açıklama</label>
+            <textarea name="description" [(ngModel)]="selectedProduct.description" rows="4"
+              class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="mb-1.5 block text-sm font-medium">Fiyat (TL)</label>
+              <input type="number" name="price" [(ngModel)]="selectedProduct.price" required min="0"
+                class="w-full rounded-md border-input bg-background p-2">
+            </div>
+            <div>
+              <label class="mb-1.5 block text-sm font-medium">Stok Adedi</label>
+              <input type="number" name="stock" [(ngModel)]="selectedProduct.stock" required min="0"
+                class="w-full rounded-md border-input bg-background p-2">
+            </div>
+          </div>
+        </div>
+        <div class="flex shrink-0 items-center justify-end gap-2 border-t p-4 bg-muted/20">
+          <button type="button" (click)="closePanel()"
+            class="rounded-md border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+          <button type="submit" [disabled]="editForm.invalid"
+            class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50">Değişiklikleri
+            Kaydet</button>
+        </div>
+      </form>
+    </main>
+
+  </aside>
+</div>
+
+<!-- Fiyat Analizi Modalı (Responsive) -->
+<div *ngIf="isAnalysisModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div (click)="closeAnalysisModal()" class="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+
+  <div class="relative w-full max-w-2xl rounded-lg bg-card shadow-xl border">
+    <header class="flex items-center justify-between border-b p-4">
+      <h2 class="text-lg font-semibold"><i class="bi bi-bar-chart-line-fill mr-2 text-primary"></i>Fiyat Analizi: <span
+          class="font-bold text-primary">{{ analysisProductName }}</span></h2>
+      <button (click)="closeAnalysisModal()"
+        class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"><i
+          class="bi bi-x-lg"></i></button>
+    </header>
+
+    <main class="p-4 sm:p-6">
+      <div *ngIf="isAnalysisLoading" class="flex flex-col items-center justify-center space-y-3 py-10">
+        <i class="bi bi-arrow-clockwise h-10 w-10 animate-spin text-primary"></i>
+        <p class="text-muted-foreground">Analiz sonuçları internetten alınıyor...</p>
+      </div>
+
+      <div *ngIf="!isAnalysisLoading && analysisResult" class="space-y-6">
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-md border border-green-500/30 bg-green-500/10 p-3 sm:p-4 text-center">
+            <p class="text-sm font-medium text-green-400">En Düşük</p>
+            <p class="text-xl sm:text-2xl font-bold text-foreground">{{ analysisResult.minPrice || 'N/A' }}</p>
+          </div>
+          <div class="rounded-md border border-red-500/30 bg-red-500/10 p-3 sm:p-4 text-center">
+            <p class="text-sm font-medium text-red-400">En Yüksek</p>
+            <p class="text-xl sm:text-2xl font-bold text-foreground">{{ analysisResult.maxPrice || 'N/A' }}</p>
+          </div>
+          <div class="rounded-md border border-blue-500/30 bg-blue-500/10 p-3 sm:p-4 text-center">
+            <p class="text-sm font-medium text-blue-400">Ortalama</p>
+            <p class="text-xl sm:text-2xl font-bold text-foreground">{{ analysisResult.averagePrice || 'N/A' }}</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="mb-2 font-semibold">Bulunan Satıcılar</h3>
+          <div class="max-h-60 overflow-y-auto rounded-md border">
+            <div class="divide-y">
+              <div *ngIf="analysisResult.retailers.length === 0" class="p-4 text-center text-muted-foreground">Online
+                satıcı bulunamadı.</div>
+              <div *ngFor="let retailer of analysisResult.retailers"
+                class="flex items-center justify-between p-3 hover:bg-muted/50">
+                <span class="font-medium">{{ retailer.storeName }}</span>
+                <a [href]="retailer.url" target="_blank" rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-1.5 text-sm text-primary-foreground hover:bg-primary/90"><span>Git</span><i
+                    class="bi bi-box-arrow-up-right text-xs"></i></a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>

@@ -1,0 +1,173 @@
+<ng-container *ngIf="!isPresentationPage">
+  <ng-container *ngIf="isLogin; else publicView">
+    <div class="flex h-screen bg-background text-foreground">
+
+      <aside
+        class="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-card transition-transform duration-300 ease-in-out md:translate-x-0"
+        [ngClass]="{ '-translate-x-full': !isSidebarOpen }">
+        <div class="flex h-16 shrink-0 items-center border-b border-border px-6">
+          <a routerLink="/" class="flex items-center gap-2 font-semibold">
+            <img src="assets/logo.png" alt="CognifyCommerce Logo" class="h-14 w-auto" />
+            <span class="text-lg">Cognify Commerce</span>
+          </a>
+        </div>
+        <nav class="flex-1 overflow-y-auto px-4 py-4">
+          <ul class="space-y-2">
+            <li>
+              <a routerLink="/dashboard" routerLinkActive="bg-muted text-foreground"
+                class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                (click)="isSidebarOpen = false">
+                <i class="bi bi-house-door-fill text-lg"></i>
+                <span>Ana Sayfa</span>
+              </a>
+            </li>
+            <li class="pt-2">
+              <div class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Mağaza
+                Yönetimi</div>
+              <ul class="space-y-1">
+                <li><a routerLink="/products" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-box-seam-fill text-lg"></i><span>Ürünler</span></a>
+                </li>
+                <li><a routerLink="/categories" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-tags-fill text-lg"></i><span>Kategoriler</span></a>
+                </li>
+                <li><a routerLink="/customers" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-people-fill text-lg"></i><span>Müşteriler</span></a>
+                </li>
+                <li><a routerLink="/orders" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-card-list text-lg"></i><span>Siparişler</span></a>
+                </li>
+                <li><a routerLink="/reviews" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i
+                      class="bi bi-chat-square-text-fill text-lg"></i><span>Yorumlar</span></a></li>
+              </ul>
+            </li>
+            <li class="pt-2">
+              <div class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Finans &
+                Raporlama</div>
+              <ul class="space-y-1">
+                <li><a routerLink="/expenses" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-cash-stack text-lg"></i><span>Masraflar</span></a>
+                </li>
+              </ul>
+            </li>
+            <li class="pt-2">
+              <div class="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">Araçlar &
+                Ayarlar</div>
+              <ul class="space-y-1">
+                <li><a routerLink="/chat" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i class="bi bi-chat-dots-fill text-lg"></i><span>AI Chat</span></a>
+                </li>
+                <li><a routerLink="/marketplace-integrations" routerLinkActive="bg-muted text-foreground"
+                    class="flex items-center gap-3 rounded-md px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+                    (click)="isSidebarOpen = false"><i
+                      class="bi bi-puzzle-fill text-lg"></i><span>Entegrasyonlar</span></a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      <div *ngIf="isSidebarOpen" (click)="isSidebarOpen = false"
+        class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"></div>
+
+      <div class="flex flex-1 flex-col md:pl-72">
+        <header
+          class="sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur-sm md:px-6">
+          <button class="md:hidden" (click)="toggleSidebar()"><i class="bi bi-list text-2xl"></i><span
+              class="sr-only">Menüyü Aç</span></button>
+          <div class="md:w-0"></div>
+          <div class="flex items-center gap-2 md:gap-4">
+            <button (click)="themeService.toggleTheme()"
+              class="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"><i
+                *ngIf="themeService.getTheme() === 'light'" class="bi bi-moon-stars-fill"></i><i
+                *ngIf="themeService.getTheme() === 'dark'" class="bi bi-sun-fill"></i><span class="sr-only">Temayı
+                Değiştir</span></button>
+
+            <div id="notification-panel-wrapper" class="relative">
+              <button (click)="toggleNotificationPanel($event)"
+                class="relative flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+                <i class="bi bi-bell-fill"></i>
+                <span class="sr-only">Bildirimler</span>
+                <span *ngIf="unreadCount > 0"
+                  class="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground animate-pulse">
+                  {{ unreadCount }}
+                </span>
+              </button>
+              <div *ngIf="isNotificationPanelOpen"
+                class="absolute right-0 top-full mt-2 w-80 origin-top-right rounded-md border border-border bg-card shadow-lg ring-1 ring-black ring-opacity-5 md:w-96">
+                <div class="p-2">
+                  <div class="flex items-center justify-between px-2 py-1">
+                    <h3 class="font-semibold">Bildirimler</h3>
+                    <button (click)="markAllNotificationsAsRead()"
+                      class="text-xs font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground"
+                      [disabled]="unreadCount === 0">Tümünü Okundu İşaretle</button>
+                  </div>
+                  <div class="mt-2 max-h-96 overflow-y-auto">
+                    <ng-container *ngIf="notifications$ | async as notifications">
+                      <div *ngIf="notifications.length > 0; else noNotifications">
+                        <a *ngFor="let notification of notifications" (click)="markNotificationAsRead(notification)"
+                          class="flex cursor-pointer items-start gap-3 rounded-md p-2 transition-colors hover:bg-muted">
+                          <div class="mt-1"><i class="text-base bi"
+                              [ngClass]="{'bi-exclamation-triangle-fill text-yellow-500': notification.type === 'Warning','bi-shield-fill-exclamation text-red-600': notification.type === 'Critical','bi-info-circle-fill text-blue-500': notification.type === 'Info','bi-check-circle-fill text-green-500': notification.type === 'Success'}"></i>
+                          </div>
+                          <div class="flex-1">
+                            <p class="text-sm font-medium leading-tight">{{ notification.message }}</p>
+                            <p class="text-xs text-muted-foreground">{{ notification.createdDate | date:'short' }}</p>
+                          </div>
+                        </a>
+                      </div>
+                      <ng-template #noNotifications>
+                        <div class="py-12 text-center text-sm text-muted-foreground"><i
+                            class="bi bi-bell-slash-fill text-4xl"></i>
+                          <p class="mt-2">Okunmamış bildiriminiz yok.</p>
+                        </div>
+                      </ng-template>
+                    </ng-container>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="hidden flex-col items-end sm:flex"><span class="font-semibold">{{ currentUser?.firstName }} {{
+                  currentUser?.lastName }}</span><span class="text-xs text-muted-foreground">Admin</span></div>
+              <div class="relative"><button
+                  class="flex h-9 w-9 items-center justify-center rounded-full bg-muted font-bold" (click)="logout()"><i
+                    class="bi bi-box-arrow-right"></i></button></div>
+            </div>
+          </div>
+        </header>
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
+          <router-outlet></router-outlet>
+        </main>
+      </div>
+
+    </div>
+  </ng-container>
+
+  <div class="pointer-events-none fixed bottom-4 right-4 z-20">
+    <img src="assets/hackathon_light.png" alt="Hackathon" class="h-8 w-auto block dark:hidden">
+    <img src="assets/hackathon_dark.png" alt="Hackathon" class="h-8 w-auto hidden dark:block">
+  </div>
+
+  <div class="fixed bottom-4 right-4 z-[9999] flex flex-col items-end gap-3">
+    <ng-container #toastContainer></ng-container>
+  </div>
+
+</ng-container>
+
+<router-outlet *ngIf="isPresentationPage"></router-outlet>
+
+
+<ng-template #publicView>
+  <div class="min-h-screen bg-background">
+    <router-outlet></router-outlet>
+  </div>
+</ng-template>

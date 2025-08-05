@@ -1,0 +1,127 @@
+<!-- Ana Sayfa Konteyneri -->
+<div class="space-y-6">
+  
+  <!-- Sayfa Başlığı ve Buton Alanı -->
+  <header class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Kategori Yönetimi</h1>
+      <p class="mt-1 text-muted-foreground">Mevcut kategorileri yönetin veya yenilerini oluşturun.</p>
+    </div>
+    <button (click)="openAddPanel()"
+            class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+      <i class="bi bi-plus-circle-fill"></i>
+      <span>Yeni Kategori Ekle</span>
+    </button>
+  </header>
+
+  <!-- Kategori Listesi Tablosu -->
+  <div class="overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <!-- Tablo Başlığı -->
+        <thead class="bg-muted/50">
+          <tr>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori Adı</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Açıklama</th>
+            <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">İşlemler</th>
+          </tr>
+        </thead>
+        <!-- Tablo İçeriği -->
+        <tbody class="divide-y divide-border">
+          <tr *ngIf="loading">
+            <td colspan="3" class="p-8 text-center text-muted-foreground">
+              <i class="bi bi-arrow-clockwise animate-spin mr-2"></i> Yükleniyor...
+            </td>
+          </tr>
+          <tr *ngIf="!loading && categories.length === 0">
+            <td colspan="3" class="p-8 text-center text-muted-foreground">Henüz hiç kategori eklenmemiş.</td>
+          </tr>
+          <tr *ngFor="let category of categories" class="hover:bg-muted/50">
+            <td class="p-4 align-middle font-medium text-foreground">{{ category.name }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ category.description || '-' }}</td>
+            <td class="p-4 text-right align-middle">
+              <div class="inline-flex items-center gap-2">
+                <button (click)="openEditPanel(category)" title="Düzenle"
+                        class="flex h-8 w-8 items-center justify-center rounded-md border border-border transition-colors hover:bg-muted">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button (click)="confirmDelete(category.categoryId)" title="Sil"
+                        class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- Yandan Açılır Panel (Sheet) - Ekleme ve Düzenleme için Ortak -->
+<div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
+  <!-- Arka Plan Karartma -->
+  <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Panel İçeriği -->
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-md flex-col border-l border-border bg-card">
+    
+    <!-- Panel Başlığı -->
+    <header class="flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
+      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Kategori Ekle' : 'Kategoriyi Düzenle' }}</h2>
+      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted">
+        <i class="bi bi-x-lg"></i>
+        <span class="sr-only">Paneli Kapat</span>
+      </button>
+    </header>
+
+    <!-- Panel Form Alanı -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- EKLEME FORMU -->
+      <form *ngIf="panelMode === 'add'" #addForm="ngForm" (ngSubmit)="addCategory()" class="space-y-4">
+        <div>
+          <label for="add-name" class="mb-1.5 block text-sm font-medium">Kategori Adı</label>
+          <input id="add-name" type="text" name="name" [(ngModel)]="newCategory.name" required
+                 class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+        </div>
+        <div>
+          <label for="add-description" class="mb-1.5 block text-sm font-medium">Açıklama (İsteğe Bağlı)</label>
+          <textarea id="add-description" name="description" [(ngModel)]="newCategory.description" rows="4"
+                    class="w-full resize-none rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"></textarea>
+        </div>
+      </form>
+      
+      <!-- DÜZENLEME FORMU -->
+      <form *ngIf="panelMode === 'edit' && selectedCategory" #editForm="ngForm" (ngSubmit)="updateCategory()" class="space-y-4">
+        <div>
+          <label for="edit-name" class="mb-1.5 block text-sm font-medium">Kategori Adı</label>
+          <input id="edit-name" type="text" name="name" [(ngModel)]="selectedCategory.name" required
+                 class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+        </div>
+        <div>
+          <label for="edit-description" class="mb-1.5 block text-sm font-medium">Açıklama (İsteğe Bağlı)</label>
+          <textarea id="edit-description" name="description" [(ngModel)]="selectedCategory.description" rows="4"
+                    class="w-full resize-none rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"></textarea>
+        </div>
+      </form>
+    </main>
+
+    <!-- Panel Alt Buton Alanı -->
+    <footer class="flex shrink-0 items-center justify-end gap-2 border-t border-border p-4">
+      <button type="button" (click)="closePanel()"
+              class="rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">
+        İptal
+      </button>
+      <button *ngIf="panelMode === 'add'" type="submit" form="addForm" [disabled]="addForm?.invalid"
+              class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        Kaydet
+      </button>
+      <button *ngIf="panelMode === 'edit'" type="submit" form="editForm" [disabled]="editForm?.invalid"
+              class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        Değişiklikleri Kaydet
+      </button>
+    </footer>
+  </aside>
+</div>

@@ -1,0 +1,195 @@
+<div class="flex h-screen w-full overflow-hidden bg-background">
+
+  <aside [class.-translate-x-full]="!isSidebarOpen" [class.translate-x-0]="isSidebarOpen"
+    class="absolute left-0 top-0 z-30 flex h-full w-72 shrink-0 transform flex-col border-r border-border bg-card/95 backdrop-blur-sm transition-transform duration-300 ease-in-out md:static md:translate-x-0">
+
+    <div class="flex shrink-0 items-center justify-between border-b border-border p-4">
+      <h2 class="text-lg font-semibold">Sohbet Geçmişi</h2>
+      <button (click)="isSidebarOpen = false" title="Menüyü Kapat"
+        class="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:hidden">
+        <i class="bi bi-x-lg text-xl"></i>
+      </button>
+    </div>
+
+    <div class="shrink-0 p-2">
+      <button (click)="startNewChat()"
+        class="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+        <i class="bi bi-plus-lg text-base"></i>
+        Yeni Sohbet Başlat
+      </button>
+    </div>
+
+    <nav class="flex-1 space-y-1 overflow-y-auto p-2">
+      <button *ngFor="let session of sessions" (click)="selectSession(session.sessionId)"
+        [class.bg-muted]="session.sessionId === activeSessionId"
+        class="group flex w-full items-center justify-between rounded-md px-3 py-2.5 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted">
+        <span class="truncate pr-2">{{ session.title }}</span>
+        <button (click)="deleteSession(session.sessionId, $event)" title="Sohbeti Sil"
+          class="invisible flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/20 hover:text-destructive group-hover:visible group-hover:opacity-100">
+          <i class="bi bi-trash3 text-xs"></i>
+        </button>
+      </button>
+      <div *ngIf="!sessions || sessions.length === 0" class="p-4 text-center text-sm text-muted-foreground">
+        Henüz bir sohbet geçmişiniz yok.
+      </div>
+    </nav>
+  </aside>
+
+  <div class="flex h-full min-w-0 flex-1 flex-col">
+
+    <header
+      class="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card/80 px-4 backdrop-blur-sm md:hidden">
+      <button (click)="isSidebarOpen = true" title="Geçmişi Görüntüle"
+        class="flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+        <i class="bi bi-list text-2xl"></i>
+      </button>
+      <h3 class="truncate text-base font-semibold">{{ activeSessionTitle }}</h3>
+      <div class="w-9"></div>
+    </header>
+
+    <main #scrollContainer class="flex-1 overflow-y-auto">
+      <div class="mx-auto max-w-4xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">
+
+        <div class="space-y-8">
+          <div *ngFor="let msg of messages; let i = index">
+            <div *ngIf="msg.sender === 'assistant'" class="flex items-start gap-4">
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border overflow-hidden">
+                <img src="assets/logo.png" alt="AI Asistan Logosu" class="h-full w-full object-cover">
+              </div>
+              <div class="max-w-2xl rounded-b-xl rounded-tr-xl bg-card p-4 ring-1 ring-border">
+                <div
+                  class="prose prose-sm max-w-none prose-p:text-foreground prose-headings:text-foreground dark:prose-invert">
+                  <div *ngIf="msg.text" [innerHTML]="msg.cachedHtml | async"></div>
+
+                  <div *ngIf="msg.chartData" class="not-prose mt-4">
+                    <canvas [id]="'chart-' + i"></canvas>
+                  </div>
+
+                  <div *ngIf="msg.data" class="not-prose mt-4">
+                    <div class="overflow-x-auto rounded-lg border border-border">
+                      <table class="min-w-full divide-y divide-border">
+                        <thead class="bg-muted/50">
+                          <tr>
+                            <th *ngFor="let head of msg.data.headers"
+                              class="px-4 py-2.5 text-left text-sm font-semibold text-muted-foreground">
+                              {{ head | titlecase }}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="divide-y divide-border bg-background">
+                          <tr *ngFor="let row of msg.data.rows">
+                            <td *ngFor="let head of msg.data.headers"
+                              class="whitespace-nowrap px-4 py-3 text-sm text-foreground">
+                              {{ row[head] }}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="msg.sender === 'user'" class="flex items-start justify-end gap-4">
+              <div class="max-w-2xl rounded-b-xl rounded-tl-xl bg-primary p-4 text-primary-foreground shadow-md">
+                <p class="whitespace-pre-wrap text-base font-normal">{{ msg.text }}</p>
+              </div>
+              <div
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted-foreground/20 text-sm font-bold text-muted-foreground">
+                {{ (msg.text ? msg.text.slice(0, 1) : '') | uppercase }}
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="loading" class="flex items-start gap-4">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border overflow-hidden">
+              <img src="assets/logo.png" alt="AI Asistan Logosu" class="h-full w-full object-cover">
+            </div>
+            <div class="flex h-12 items-center rounded-b-xl rounded-tr-xl bg-card p-4 ring-1 ring-border">
+              <div class="flex items-center space-x-1.5">
+                <div class="h-2 w-2 animate-pulse rounded-full bg-muted-foreground"></div>
+                <div class="h-2 w-2 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.15s]"></div>
+                <div class="h-2 w-2 animate-pulse rounded-full bg-muted-foreground [animation-delay:0.3s]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="messages.length <= 1 && (messages.length === 0 || messages[0].text.startsWith('Merhaba!'))"
+          class="mt-8 flex flex-col items-center justify-center text-center">
+          <div
+            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-card ring-1 ring-border overflow-hidden">
+            <img src="assets/logo.png" alt="Cognify AI Logo" class="h-full w-full object-cover">
+          </div>
+          <h1 class="text-2xl font-bold text-foreground">Cognify AI Asistan</h1>
+          <p class="mt-2 max-w-md text-muted-foreground">Veritabanınızla ilgili sorular sorabilir veya sohbet
+            edebilirsiniz.</p>
+          <div class="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div class="cursor-pointer rounded-lg border p-4 text-left hover:bg-muted"
+              (click)="setPromptAndSend('En çok satılan 5 ürünü listele')">
+              <h4 class="font-semibold">En Çok Satanlar</h4>
+              <p class="text-sm text-muted-foreground">En çok satılan 5 ürünü listele</p>
+            </div>
+            <div class="cursor-pointer rounded-lg border p-4 text-left hover:bg-muted"
+              (click)="setPromptAndSend('Bu ayın masraf dökümünü yap')">
+              <h4 class="font-semibold">Masraf Dökümü</h4>
+              <p class="text-sm text-muted-foreground">Bu ayın masraf dökümünü yap</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <div class="fixed bottom-0 left-0 right-0 border-t border-border bg-card/80 backdrop-blur-sm md:left-72">
+      <div class="mx-auto max-w-4xl p-4 sm:p-6">
+        <div *ngIf="mentionPopup.isOpen" class="mb-2 rounded-lg border bg-card shadow-xl">
+          <div class="border-b p-2">
+            <input type="text" placeholder="{{mentionPopup.type | titlecase}} ara..."
+              [(ngModel)]="mentionPopup.searchTerm" (ngModelChange)="filterMentionSuggestions()"
+              class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+          </div>
+          <ul class="max-h-64 overflow-y-auto">
+            <ng-container *ngIf="mentionPopup.type === 'kullanıcı'">
+              <li *ngFor="let item of mentionPopup.suggestions" (click)="selectMention(item, 'customer')"
+                class="flex cursor-pointer items-center gap-3 px-4 py-2 hover:bg-muted">
+                <div class="font-medium">{{item.firstName}} {{item.lastName}}</div>
+                <div class="text-sm text-muted-foreground">{{item.email}}</div>
+              </li>
+            </ng-container>
+            <ng-container *ngIf="mentionPopup.type === 'ürün'">
+              <li *ngFor="let item of mentionPopup.suggestions" (click)="selectMention(item, 'product')"
+                class="flex cursor-pointer items-center justify-between px-4 py-2 hover:bg-muted">
+                <div class="font-medium">{{item.name}}</div>
+                <div class="text-sm text-muted-foreground">Stok: {{item.stock}}</div>
+              </li>
+            </ng-container>
+            <ng-container *ngIf="mentionPopup.type === 'sipariş'">
+              <li *ngFor="let item of mentionPopup.suggestions" (click)="selectMention(item, 'order')"
+                class="flex cursor-pointer items-center justify-between px-4 py-2 hover:bg-muted">
+                <div class="font-medium">#{{item.orderId}} - {{item.customerFullName}}</div>
+                <div class="text-sm text-muted-foreground">{{item.orderDate | date:'short'}}</div>
+              </li>
+            </ng-container>
+            <li *ngIf="mentionPopup.suggestions.length === 0" class="px-4 py-2 text-center text-muted-foreground">
+              Sonuç bulunamadı.
+            </li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div #promptInput contenteditable="true" (keydown)="handleKeyDown($event)" (input)="handleInput($event)"
+            [attr.data-placeholder]="isInputEmpty ? 'AI ile sohbet edin veya bir soru sorun... (@kullanıcı, @ürün, @sipariş)' : ''"
+            class="prompt-input w-full min-h-[56px] resize-none overflow-y-auto rounded-xl border-border bg-muted pr-16 text-base text-foreground shadow-inner transition-colors focus:border-primary/50 focus:bg-background focus:ring-2 focus:ring-primary/50 px-4 flex items-center">
+          </div>
+          <button (click)="send()" [disabled]="loading || isInputEmpty"
+            class="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground transition-all duration-200 ease-in-out hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground">
+            <i class="bi bi-arrow-up text-xl"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>

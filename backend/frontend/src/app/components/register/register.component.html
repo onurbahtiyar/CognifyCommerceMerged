@@ -1,0 +1,138 @@
+<div class="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+  <div class="relative flex w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl shadow-black/10">
+    
+    <!-- Sol Taraf - Marka Tanıtımı (Masaüstü için) -->
+    <div class="hidden w-1/2 flex-col justify-between bg-primary p-8 text-primary-foreground lg:flex">
+      <div>
+        <a routerLink="/" class="flex items-center gap-2 text-xl font-bold">
+            <img src="assets/logo_white.png" alt="CognifyCommerce Logo" class="h-20 w-auto" />
+            <span>Cognify Commerce</span>
+        </a>
+        <p class="mt-12 text-3xl font-semibold leading-snug">
+          Yeni Bir Hesapla<br>Potansiyeli Açığa Çıkarın
+        </p>
+        <p class="mt-4 text-primary-foreground/80">
+          Sadece birkaç adımda AI destekli ticaret dünyasına adım atın.
+        </p>
+      </div>
+      <div class="text-xs text-primary-foreground/60">
+        © {{ currentYear }} Cognify Commerce.
+      </div>
+    </div>
+
+    <!-- Sağ Taraf - Kayıt Formu -->
+    <div class="w-full bg-card p-8 lg:w-1/2 lg:p-12">
+      <div class="flex w-full flex-col items-center justify-center">
+        <div class="w-full max-w-sm">
+          <div class="mb-8 text-center lg:text-left">
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">Hesap Oluştur</h1>
+            <p class="mt-2 text-muted-foreground">Sadece birkaç adımda aramıza katılın.</p>
+          </div>
+          
+          <!-- İlerleme Çubuğu (Progress Bar) -->
+          <div class="mb-6">
+            <div class="relative h-2 w-full rounded-full bg-muted">
+              <div class="absolute h-2 rounded-full bg-primary transition-all duration-500"
+                   [style.width.%]="(currentStep / 3) * 100">
+              </div>
+            </div>
+            <p class="mt-2 text-right text-xs text-muted-foreground">Adım {{ currentStep }} / 3</p>
+          </div>
+
+          <!-- Form -->
+          <form #registerForm="ngForm" (ngSubmit)="register()" novalidate>
+            <!-- Adım 1: Hesap Bilgileri -->
+            <div *ngIf="currentStep === 1" class="space-y-4">
+              <h3 class="font-semibold text-foreground">Hesap Bilgileri</h3>
+              <div>
+                <label for="reg-email" class="mb-1.5 block text-sm font-medium text-foreground/90">E-posta</label>
+                <input id="reg-email" type="email" name="email" [(ngModel)]="registerData.email" required email
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+              <div>
+                <label for="reg-username" class="mb-1.5 block text-sm font-medium text-foreground/90">Kullanıcı Adı</label>
+                <input id="reg-username" type="text" name="username" [(ngModel)]="registerData.username" required
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+              <div>
+                <label for="reg-password" class="mb-1.5 block text-sm font-medium text-foreground/90">Şifre</label>
+                <input id="reg-password" type="password" name="password" [(ngModel)]="registerData.password" required minlength="6"
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+            </div>
+
+            <!-- Adım 2: Kişisel Bilgiler -->
+            <div *ngIf="currentStep === 2" class="space-y-4">
+              <h3 class="font-semibold text-foreground">Kişisel Bilgiler</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label for="reg-fname" class="mb-1.5 block text-sm font-medium text-foreground/90">Ad</label>
+                  <input id="reg-fname" type="text" name="firstName" [(ngModel)]="registerData.firstName" required
+                         class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+                </div>
+                <div>
+                  <label for="reg-lname" class="mb-1.5 block text-sm font-medium text-foreground/90">Soyad</label>
+                  <input id="reg-lname" name="lastName" [(ngModel)]="registerData.lastName" required
+                         class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+                </div>
+              </div>
+              <div>
+                <label for="reg-dob" class="mb-1.5 block text-sm font-medium text-foreground/90">Doğum Tarihi</label>
+                <input id="reg-dob" type="date" name="dateOfBirth" [(ngModel)]="registerData.dateOfBirth"
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+              <div>
+                <label for="reg-gender" class="mb-1.5 block text-sm font-medium text-foreground/90">Cinsiyet</label>
+                <select id="reg-gender" name="gender" [(ngModel)]="registerData.gender"
+                        class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+                  <option [ngValue]="null" disabled>Seçiniz...</option>
+                  <option [ngValue]="true">Erkek</option>
+                  <option [ngValue]="false">Kadın</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Adım 3: İletişim Bilgileri -->
+            <div *ngIf="currentStep === 3" class="space-y-4">
+              <h3 class="font-semibold text-foreground">İletişim Bilgileri</h3>
+              <div>
+                <label for="reg-phone" class="mb-1.5 block text-sm font-medium text-foreground/90">Telefon</label>
+                <input id="reg-phone" type="tel" name="phoneNumber" [(ngModel)]="registerData.phoneNumber"
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+               <div>
+                <label for="reg-country" class="mb-1.5 block text-sm font-medium text-foreground/90">Ülke</label>
+                <input id="reg-country" type="text" name="country" [(ngModel)]="registerData.country"
+                       class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring text-foreground">
+              </div>
+            </div>
+
+            <!-- Navigasyon Butonları -->
+            <div class="mt-8 flex items-center" [ngClass]="currentStep > 1 ? 'justify-between' : 'justify-end'">
+              <button *ngIf="currentStep > 1" type="button" (click)="prevStep()"
+                      class="rounded-md border border-border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">
+                Geri
+              </button>
+              
+              <button *ngIf="currentStep < 3" type="button" (click)="nextStep()" [disabled]="isCurrentStepInvalid()"
+                      class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                Sonraki Adım
+              </button>
+
+              <button *ngIf="currentStep === 3" type="submit" [disabled]="loading || registerForm.invalid"
+                      class="flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+                <svg *ngIf="loading" class="mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V4a4 4 0 00-4 4H4z"></path></svg>
+                <span>{{ loading ? 'Hesap Oluşturuluyor...' : 'Hesabı Oluştur' }}</span>
+              </button>
+            </div>
+          </form>
+
+          <p class="mt-8 text-center text-sm text-muted-foreground">
+            Zaten bir hesabın var mı? 
+            <a routerLink="/login" class="font-semibold text-primary hover:underline">Giriş Yap</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

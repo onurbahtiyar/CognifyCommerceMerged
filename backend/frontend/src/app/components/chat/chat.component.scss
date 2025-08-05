@@ -1,0 +1,60 @@
+:host {
+
+  ::ng-deep .prompt-input {
+    line-height: 1.7;
+
+    .mention-badge {
+      display: inline-flex;
+      align-items: center;
+      vertical-align: middle;
+
+      background-color: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-radius: 1em;
+      
+      padding: 3px 4px 3px 10px; 
+      font-size: 0.875em; 
+      font-weight: 500;
+      
+      user-select: none;
+      cursor: default;
+      
+      margin: 0 3px;
+      
+      white-space: nowrap;
+
+      .mention-remove-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        margin-left: 6px;
+        
+        background-color: transparent;
+        color: hsl(var(--primary-foreground));
+        border: none;
+        cursor: pointer;
+        opacity: 0.7;
+        transition: all 0.2s ease;
+
+        font-size: 16px;
+        line-height: 1;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.2);
+          opacity: 1;
+        }
+      }
+    }
+  }
+
+  ::ng-deep .prompt-input:empty:before {
+    content: attr(data-placeholder);
+    color: hsl(var(--muted-foreground));
+    pointer-events: none;
+    cursor: text;
+  }
+}
