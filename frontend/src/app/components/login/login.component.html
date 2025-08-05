@@ -1,0 +1,116 @@
+<!-- Ana Konteyner -->
+<div class="flex min-h-screen w-full items-center justify-center bg-muted/40 p-4">
+  
+  <!-- Tema Değiştirici Butonu -->
+  <div class="absolute top-4 right-4">
+    <button (click)="themeService.toggleTheme()"
+            title="Temayı Değiştir"
+            class="flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
+      <i *ngIf="themeService.getTheme() === 'light'" class="bi bi-moon-stars-fill"></i>
+      <i *ngIf="themeService.getTheme() === 'dark'" class="bi bi-sun-fill"></i>
+      <span class="sr-only">Temayı değiştir</span>
+    </button>
+  </div>
+
+  <!-- Giriş Paneli -->
+  <div class="relative flex w-full max-w-4xl overflow-hidden rounded-2xl bg-card shadow-2xl shadow-black/10">
+    
+    <!-- Sol Taraf - Marka Tanıtımı (Masaüstü için) -->
+    <div class="hidden w-1/2 flex-col justify-between bg-primary p-8 text-primary-foreground lg:flex">
+      <div>
+        <a routerLink="/" class="flex items-center gap-2 text-xl font-bold">
+            <img src="assets/logo_white.png" alt="CognifyCommerce Logo" class="h-20 w-auto" />
+            <span>Cognify Commerce</span>
+        </a>
+        <!-- DEĞİŞTİRİLDİ: Başlık daha dinamik ve fayda odaklı hale getirildi. -->
+        <p class="mt-12 text-3xl font-semibold leading-snug">
+          Yapay Zeka ile Büyüyün
+        </p>
+        <!-- DEĞİŞTİRİLDİ: Açıklama, projenin en güçlü özelliği olan konuşma tabanlı veri sorgulamasını vurguluyor. -->
+        <p class="mt-4 text-primary-foreground/80">
+          Verilerinize "soru sorun". Stok durumundan müşteri analizine kadar her şeyi akıllı asistanınız saniyeler içinde yanıtlasın.
+        </p>
+      </div>
+      <div class="text-xs text-primary-foreground/60">
+        © {{ currentYear }} Cognify Commerce.
+      </div>
+    </div>
+
+    <!-- Sağ Taraf - Giriş Formu -->
+    <div class="w-full bg-card p-8 lg:w-1/2 lg:p-12">
+      <div class="flex w-full flex-col items-center justify-center">
+        <div class="w-full max-w-sm">
+          <div class="mb-8 text-center lg:text-left">
+            <!-- DEĞİŞTİRİLDİ: Başlık daha davetkar ve platformun gücünü yansıtıyor. -->
+            <h1 class="text-3xl font-bold tracking-tight text-foreground">Kontrol Merkezine Hoş Geldin!</h1>
+            <!-- DEĞİŞTİRİLDİ: Alt başlık, eyleme geçirici ve potansiyeli vurguluyor. -->
+            <p class="mt-2 text-muted-foreground">İşletmenizin potansiyelini ortaya çıkarmak için giriş yapın.</p>
+          </div>
+
+          <!-- Form -->
+          <form (ngSubmit)="login()" novalidate class="space-y-6">
+            <!-- E-posta / Kullanıcı Adı -->
+            <div>
+              <label for="login-username" class="mb-1.5 block text-sm font-medium text-foreground/90">Kullanıcı Adı veya E-posta</label>
+              <input
+                [(ngModel)]="loginData.username"
+                name="loginUsername"
+                id="login-username"
+                type="text"
+                placeholder="E-posta veya kullanıcı adı"
+                class="w-full rounded-lg border border-border bg-transparent p-3 text-foreground shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50"
+                required
+              />
+            </div>
+            
+            <!-- Şifre -->
+            <div>
+              <div class="flex items-center justify-between">
+                <label for="login-password" class="mb-1.5 block text-sm font-medium text-foreground/90">Şifre</label>
+                <a routerLink="/forgot-password" class="text-sm font-medium text-primary hover:underline">Şifremi unuttum?</a>
+              </div>
+              <input
+                [(ngModel)]="loginData.password"
+                name="loginPassword"
+                id="login-password"
+                type="password"
+                placeholder="••••••••"
+                class="w-full rounded-lg border border-border bg-transparent p-3 text-foreground shadow-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/50"
+                required
+              />
+            </div>
+
+            <!-- Giriş Butonu -->
+            <button
+              type="submit"
+              [disabled]="loading"
+              class="flex w-full items-center justify-center rounded-lg bg-primary px-4 py-3 text-base font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70">
+              <svg *ngIf="loading" class="mr-2 h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+              <span>{{ loading ? 'Giriş Yapılıyor...' : 'Güvenli Giriş' }}</span>
+            </button>
+          </form>
+
+          <!-- Alternatif Giriş -->
+          <div class="relative my-8">
+            <div class="absolute inset-0 flex items-center">
+              <span class="w-full border-t border-border"></span>
+            </div>
+            <div class="relative flex justify-center text-xs uppercase">
+              <span class="bg-card px-2 text-muted-foreground">Veya</span>
+            </div>
+          </div>
+          
+          <!-- YENİ KAYIT LİNKİ -->
+          <a routerLink="/register" class="flex w-full items-center justify-center gap-2 rounded-lg border border-border px-4 py-3 text-sm font-semibold text-foreground transition hover:bg-muted">
+            <i class="bi bi-person-plus-fill"></i>
+            <span>Hesap Oluştur</span>
+          </a>
+          
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,161 @@
+<!-- Ana Sayfa Konteyneri -->
+<div class="space-y-6">
+
+  <!-- Sayfa Başlığı ve Buton Alanı (Zaten Responsive) -->
+  <header class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Müşteri Yönetimi</h1>
+      <p class="mt-1 text-muted-foreground">Mevcut müşterileri görüntüleyin, düzenleyin veya yeni müşteri ekleyin.</p>
+    </div>
+    <button (click)="openAddPanel()"
+            class="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+      <i class="bi bi-person-plus-fill"></i>
+      <span>Yeni Müşteri Ekle</span>
+    </button>
+  </header>
+
+  <!-- Yüklenme ve Boş Liste Durumları -->
+  <div *ngIf="loading" class="p-8 text-center text-muted-foreground">
+      <i class="bi bi-arrow-clockwise animate-spin mr-2 text-2xl"></i> Yükleniyor...
+  </div>
+  <div *ngIf="!loading && customers.length === 0" class="p-8 text-center text-muted-foreground rounded-lg border-2 border-dashed">
+      Henüz hiç müşteri eklenmemiş.
+  </div>
+
+  <!-- MOBİL GÖRÜNÜM: Kart Listesi (md breakpoint'ine kadar görünür) -->
+  <div *ngIf="!loading && customers.length > 0" class="space-y-4 md:hidden">
+    <div *ngFor="let customer of customers" class="rounded-lg border bg-card p-4 shadow-sm">
+      <!-- Kart Başlığı: İsim ve İşlem Butonları -->
+      <div class="flex items-start justify-between gap-4 border-b pb-3">
+        <div class="flex-1">
+          <h3 class="font-semibold text-foreground">{{ customer.firstName }} {{ customer.lastName }}</h3>
+          <p class="text-sm text-muted-foreground">{{ customer.email }}</p>
+        </div>
+        <div class="inline-flex items-center gap-2 shrink-0">
+          <button (click)="openEditPanel(customer)" title="Düzenle" class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted">
+            <i class="bi bi-pencil-square"></i>
+          </button>
+          <button (click)="confirmDelete(customer.customerId)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground">
+            <i class="bi bi-trash3-fill"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Kart İçeriği: Diğer Bilgiler -->
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 pt-3 text-sm">
+        <div class="font-medium text-muted-foreground">Telefon:</div>
+        <div>{{ customer.phoneNumber || '-' }}</div>
+        <div class="font-medium text-muted-foreground">Kayıt Tarihi:</div>
+        <div>{{ customer.createdDate | date:'dd.MM.yyyy' }}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASAÜSTÜ GÖRÜNÜM: Tablo (md breakpoint'inden itibaren görünür) -->
+  <div *ngIf="!loading && customers.length > 0" class="hidden overflow-hidden rounded-lg border bg-card shadow-sm md:block">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <!-- Tablo Başlığı -->
+        <thead class="bg-muted/50">
+          <tr>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Ad Soyad</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">E-posta</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Telefon</th>
+            <th class="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Kayıt Tarihi</th>
+            <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">İşlemler</th>
+          </tr>
+        </thead>
+        <!-- Tablo İçeriği -->
+        <tbody class="divide-y divide-border">
+          <tr *ngFor="let customer of customers" class="hover:bg-muted/50">
+            <td class="p-4 align-middle font-medium text-foreground">{{ customer.firstName }} {{ customer.lastName }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ customer.email }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ customer.phoneNumber || '-' }}</td>
+            <td class="p-4 text-center align-middle text-muted-foreground">{{ customer.createdDate | date:'dd.MM.yyyy' }}</td>
+            <td class="p-4 text-right align-middle">
+              <div class="inline-flex items-center gap-2">
+                <button (click)="openEditPanel(customer)" title="Düzenle" class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted">
+                  <i class="bi bi-pencil-square"></i>
+                </button>
+                <button (click)="confirmDelete(customer.customerId)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground">
+                  <i class="bi bi-trash3-fill"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+
+<!-- Yandan Açılır Panel (Sheet) - Ekleme ve Düzenleme için Ortak -->
+<div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
+  <!-- Arka Plan Karartma -->
+  <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <!-- Panel İçeriği -->
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-lg flex-col border-l bg-card">
+    
+    <!-- Panel Başlığı -->
+    <header class="flex h-16 shrink-0 items-center justify-between border-b px-6">
+      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Müşteri Ekle' : 'Müşteriyi Düzenle' }}</h2>
+      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted">
+        <i class="bi bi-x-lg"></i>
+        <span class="sr-only">Paneli Kapat</span>
+      </button>
+    </header>
+
+    <!-- Panel Form Alanı -->
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- ORTAK FORM (ADD & EDIT) -->
+      <form #customerForm="ngForm" (ngSubmit)="saveCustomer()" class="space-y-4" novalidate>
+        <!-- Ad ve Soyad, en küçük ekranlarda alt alta gelir -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label for="firstName" class="mb-1.5 block text-sm font-medium">Ad</label>
+              <input id="firstName" type="text" name="firstName" #firstName="ngModel" required
+                     [(ngModel)]="activeCustomer.firstName"
+                     class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+            </div>
+            <div>
+              <label for="lastName" class="mb-1.5 block text-sm font-medium">Soyad</label>
+              <input id="lastName" type="text" name="lastName" #lastName="ngModel" required
+                     [(ngModel)]="activeCustomer.lastName"
+                     class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+            </div>
+        </div>
+        <div>
+          <label for="email" class="mb-1.5 block text-sm font-medium">E-posta Adresi</label>
+          <input id="email" type="email" name="email" #email="ngModel" required email
+                 [(ngModel)]="activeCustomer.email"
+                 class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+        </div>
+        <div>
+          <label for="phoneNumber" class="mb-1.5 block text-sm font-medium">Telefon Numarası (İsteğe Bağlı)</label>
+          <input id="phoneNumber" type="tel" name="phoneNumber"
+                 [(ngModel)]="activeCustomer.phoneNumber"
+                 class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring">
+        </div>
+        <div>
+          <label for="address" class="mb-1.5 block text-sm font-medium">Adres (İsteğe Bağlı)</label>
+          <textarea id="address" name="address" [(ngModel)]="activeCustomer.address" rows="4"
+                    class="w-full resize-y rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"></textarea>
+        </div>
+      </form>
+    </main>
+
+    <!-- Panel Alt Buton Alanı -->
+    <footer class="flex shrink-0 items-center justify-end gap-2 border-t p-4">
+      <button type="button" (click)="closePanel()"
+              class="rounded-md border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">
+        İptal
+      </button>
+      <button type="submit" (click)="saveCustomer()" [disabled]="customerForm.invalid"
+              class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+        {{ panelMode === 'add' ? 'Müşteriyi Kaydet' : 'Değişiklikleri Kaydet' }}
+      </button>
+    </footer>
+  </aside>
+</div>

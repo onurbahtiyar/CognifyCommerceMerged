@@ -1,0 +1,163 @@
+<!-- Ana Konteyner -->
+<div class="space-y-6">
+
+  <!-- Sayfa Başlığı ve Buton -->
+  <header class="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+    <div>
+      <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Masraf Yönetimi</h1>
+      <p class="mt-1 text-muted-foreground">İşletme giderlerinizi kaydedin, görüntüleyin ve düzenleyin.</p>
+    </div>
+    <button (click)="openAddPanel()"
+      class="inline-flex w-full sm:w-auto items-center justify-center gap-2 whitespace-nowrap rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+      <i class="bi bi-plus-circle-fill"></i>
+      <span>Yeni Masraf Ekle</span>
+    </button>
+  </header>
+
+  <!-- Yüklenme ve Boş Liste Durumları -->
+  <div *ngIf="loading" class="p-8 text-center text-muted-foreground">
+      <i class="bi bi-arrow-clockwise animate-spin mr-2 text-2xl"></i> Yükleniyor...
+  </div>
+  <div *ngIf="!loading && expenses.length === 0" class="p-8 text-center text-muted-foreground rounded-lg border-2 border-dashed">
+      Henüz hiç masraf eklenmemiş.
+  </div>
+
+  <!-- MOBİL GÖRÜNÜM: Kart Listesi (md breakpoint'ine kadar görünür) -->
+  <div *ngIf="!loading && expenses.length > 0" class="space-y-4 md:hidden">
+    <div *ngFor="let expense of expenses" class="rounded-lg border bg-card p-4 shadow-sm">
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex-1">
+          <p class="text-sm font-medium text-foreground">{{ expense.description }}</p>
+          <p class="text-xs text-muted-foreground">{{ expense.expenseCategoryName }}</p>
+        </div>
+        <div class="text-right shrink-0">
+          <p class="font-semibold text-primary">{{ expense.amount | currency:'TRY':'symbol-narrow' }}</p>
+          <p class="text-xs text-muted-foreground">{{ expense.expenseDate | date:'dd.MM.yyyy' }}</p>
+        </div>
+      </div>
+      <div class="mt-3 border-t pt-3 flex items-center justify-end gap-2">
+        <button (click)="openEditPanel(expense)" title="Düzenle" class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"><i class="bi bi-pencil-square"></i></button>
+        <button (click)="confirmDelete(expense.expenseId)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i class="bi bi-trash3-fill"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MASAÜSTÜ GÖRÜNÜM: Tablo (md breakpoint'inden itibaren görünür) -->
+  <div *ngIf="!loading && expenses.length > 0" class="hidden overflow-hidden rounded-lg border bg-card shadow-sm md:block">
+    <div class="overflow-x-auto">
+      <table class="w-full">
+        <thead class="bg-muted/50">
+          <tr>
+            <th class="h-12 w-2/5 px-4 text-left align-middle font-medium text-muted-foreground">Açıklama</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Kategori</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Tutar</th>
+            <th class="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Masraf Tarihi</th>
+            <th class="h-12 px-4 text-right align-middle font-medium text-muted-foreground">İşlemler</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-border">
+          <tr *ngFor="let expense of expenses" class="hover:bg-muted/50">
+            <td class="p-4 align-middle font-medium text-foreground">{{ expense.description }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ expense.expenseCategoryName }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ expense.amount | currency:'TRY':'symbol-narrow':'1.2-2' }}</td>
+            <td class="p-4 align-middle text-muted-foreground">{{ expense.expenseDate | date:'dd.MM.yyyy' }}</td>
+            <td class="p-4 text-right align-middle">
+              <div class="inline-flex items-center gap-2">
+                <button (click)="openEditPanel(expense)" title="Düzenle" class="flex h-8 w-8 items-center justify-center rounded-md border transition-colors hover:bg-muted"><i class="bi bi-pencil-square"></i></button>
+                <button (click)="confirmDelete(expense.expenseId)" title="Sil" class="flex h-8 w-8 items-center justify-center rounded-md border border-destructive/50 text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"><i class="bi bi-trash3-fill"></i></button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Yandan Açılır Panel (Sheet) - Ekleme ve Düzenleme için -->
+<div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
+  <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-lg flex-col border-l bg-card">
+    <header class="flex h-16 shrink-0 items-center justify-between border-b px-6">
+      <h2 class="text-lg font-semibold">{{ panelMode === 'add' ? 'Yeni Masraf Ekle' : 'Masrafı Düzenle' }}</h2>
+      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-muted"><i class="bi bi-x-lg"></i></button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-6">
+      <!-- EKLEME FORMU -->
+      <form *ngIf="panelMode === 'add'" #addForm="ngForm" (ngSubmit)="saveNewExpense(addForm)" class="space-y-4">
+        <div>
+          <label for="add-desc" class="mb-1.5 block text-sm font-medium">Masraf Açıklaması</label>
+          <textarea id="add-desc" name="description" [(ngModel)]="newExpense.description" required rows="3" class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="add-category" class="mb-1.5 block text-sm font-medium">Masraf Kategorisi</label>
+            <select id="add-category" name="expenseCategoryId" [(ngModel)]="newExpense.expenseCategoryId" required class="w-full rounded-md border-input bg-background p-2">
+              <option [ngValue]="null" disabled>Kategori seçin...</option>
+              <option *ngFor="let cat of expenseCategories" [value]="cat.expenseCategoryId">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="add-amount" class="mb-1.5 block text-sm font-medium">Tutar (TL)</label>
+            <input id="add-amount" type="number" name="amount" [(ngModel)]="newExpense.amount" required min="0.01" step="0.01" class="w-full rounded-md border-input bg-background p-2">
+          </div>
+        </div>
+
+        <div>
+            <label for="add-date" class="mb-1.5 block text-sm font-medium">Masraf Tarihi</label>
+            <input id="add-date" type="date" name="expenseDate" [(ngModel)]="newExpense.expenseDate" required class="w-full rounded-md border-input bg-background p-2">
+        </div>
+
+        <div>
+          <label for="add-notes" class="mb-1.5 block text-sm font-medium">Notlar (İsteğe Bağlı)</label>
+          <textarea id="add-notes" name="notes" [(ngModel)]="newExpense.notes" rows="2" class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" (click)="closePanel()" class="rounded-md border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+          <button type="submit" [disabled]="addForm.invalid" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">Masrafı Kaydet</button>
+        </div>
+      </form>
+
+      <!-- DÜZENLEME FORMU -->
+      <form *ngIf="panelMode === 'edit' && selectedExpense" #editForm="ngForm" (ngSubmit)="updateExpense(editForm)" class="space-y-4">
+        <div>
+          <label for="edit-desc" class="mb-1.5 block text-sm font-medium">Masraf Açıklaması</label>
+          <textarea id="edit-desc" name="description" [(ngModel)]="selectedExpense.description" required rows="3" class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label for="edit-category" class="mb-1.5 block text-sm font-medium">Masraf Kategorisi</label>
+            <select id="edit-category" name="expenseCategoryId" [(ngModel)]="selectedExpense.expenseCategoryId" required class="w-full rounded-md border-input bg-background p-2">
+              <option *ngFor="let cat of expenseCategories" [value]="cat.expenseCategoryId">{{ cat.name }}</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-amount" class="mb-1.5 block text-sm font-medium">Tutar (TL)</label>
+            <input id="edit-amount" type="number" name="amount" [(ngModel)]="selectedExpense.amount" required min="0.01" step="0.01" class="w-full rounded-md border-input bg-background p-2">
+          </div>
+        </div>
+
+        <div>
+            <label for="edit-date" class="mb-1.5 block text-sm font-medium">Masraf Tarihi</label>
+            <input id="edit-date" type="date" name="expenseDate" [(ngModel)]="selectedExpense.expenseDate" required class="w-full rounded-md border-input bg-background p-2">
+        </div>
+
+        <div>
+          <label for="edit-notes" class="mb-1.5 block text-sm font-medium">Notlar (İsteğe Bağlı)</label>
+          <textarea id="edit-notes" name="notes" [(ngModel)]="selectedExpense.notes" rows="2" class="w-full resize-y rounded-md border-input bg-background p-2"></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4">
+          <button type="button" (click)="closePanel()" class="rounded-md border bg-transparent px-4 py-2 text-sm font-medium hover:bg-accent">İptal</button>
+          <button type="submit" [disabled]="editForm.invalid" class="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50">Değişiklikleri Kaydet</button>
+        </div>
+      </form>
+    </main>
+  </aside>
+</div>

@@ -1,0 +1,97 @@
+<div class="space-y-6">
+  <header>
+    <h1 class="text-2xl font-bold tracking-tight text-foreground md:text-3xl">Pazar Yeri Entegrasyonları</h1>
+    <p class="mt-1 text-muted-foreground">Mevcut pazar yerlerinin API anahtarlarını ve ayarlarını yönetin.</p>
+  </header>
+
+  <div *ngIf="loading" class="w-full p-8 text-center">
+    <i class="bi bi-arrow-clockwise animate-spin mr-2 text-2xl"></i>
+    <span class="text-muted-foreground">Entegrasyonlar Yükleniyor...</span>
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div *ngFor="let m of uiMarketplaces"
+         class="overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all hover:shadow-md">
+      <div class="flex items-center justify-between border-b p-4">
+        <div class="flex items-center gap-3">
+          <i class="text-2xl" [ngClass]="m.logoClass"></i>
+          <h2 class="text-lg font-semibold">{{ m.displayName }}</h2>
+        </div>
+        <span class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+              [ngClass]="m.data && m.data.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'">
+          {{ m.data && m.data.isActive ? 'Aktif' : 'Pasif' }}
+        </span>
+      </div>
+      <div class="p-4">
+        <p class="text-sm text-muted-foreground h-10">
+          {{ m.data?.description || 'Bu entegrasyon henüz yapılandırılmadı.' }}
+        </p>
+        <button (click)="openEditPanel(m)"
+                class="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary/90">
+          <i class="bi bi-gear-fill"></i>
+          <span>Yapılandır</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<div *ngIf="isPanelOpen" class="fixed inset-0 z-50">
+  <div (click)="closePanel()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+  <aside class="absolute inset-y-0 right-0 flex w-full max-w-lg flex-col border-l bg-card">
+    <header class="flex h-16 shrink-0 items-center justify-between border-b px-6">
+      <div class="flex items-center gap-3">
+         <i class="text-xl" [ngClass]="selectedMarketplace?.logoClass || ''"></i>
+         <h2 class="text-lg font-semibold">{{ selectedMarketplace?.displayName }} Entegrasyon Bilgileri</h2>
+      </div>
+      <button (click)="closePanel()" class="flex h-8 w-8 items-center justify-center rounded-full hover:bg-muted">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-6 space-y-4">
+      <div>
+        <label for="apiKey" class="block text-sm font-medium text-foreground mb-1">API Anahtarı (Key) <span class="text-destructive">*</span></label>
+        <input type="text" id="apiKey" [(ngModel)]="integrationForm.apiKey" required
+               class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"
+               placeholder="Pazar yerinden aldığınız API anahtarını girin">
+      </div>
+      <div>
+        <label for="apiSecret" class="block text-sm font-medium text-foreground mb-1">API Gizli Anahtarı (Secret)</label>
+        <input type="text" id="apiSecret" [(ngModel)]="integrationForm.apiSecret"
+               class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"
+               placeholder="(Varsa) API gizli anahtarını girin">
+      </div>
+      <div>
+        <label for="apiUrl" class="block text-sm font-medium text-foreground mb-1">API Adresi (URL)</label>
+        <input type="text" id="apiUrl" [(ngModel)]="integrationForm.apiUrl"
+               class="w-full rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"
+               placeholder="(Varsa) Pazar yeri API adresini girin">
+      </div>
+      <div>
+        <label for="description" class="block text-sm font-medium text-foreground mb-1">Açıklama</label>
+        <textarea id="description" [(ngModel)]="integrationForm.description" rows="3"
+                  class="w-full resize-y rounded-md border-input bg-background p-2 focus:ring-2 focus:ring-ring"
+                  placeholder="Bu entegrasyonla ilgili notlarınız..."></textarea>
+      </div>
+       <div class="flex items-center justify-between rounded-lg border p-3">
+        <div class="space-y-0.5">
+          <label for="isActive" class="text-sm font-medium">Entegrasyon Aktif</label>
+          <p class="text-xs text-muted-foreground">Pasif hale getirilen entegrasyonlar kullanılamaz.</p>
+        </div>
+        <label class="relative inline-flex cursor-pointer items-center">
+          <input type="checkbox" id="isActive" [(ngModel)]="integrationForm.isActive" class="peer sr-only">
+          <div class="peer h-6 w-11 rounded-full bg-muted after:absolute after:top-0.5 after:left-0.5 after:h-5 after:w-5 after:rounded-full after:border after:border-border after:bg-background after:transition-all peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+        </label>
+      </div>
+    </main>
+    <footer class="flex shrink-0 items-center justify-end gap-2 border-t p-4 bg-muted/50">
+        <button type="button" (click)="closePanel()" class="rounded-md border bg-transparent px-4 py-2 hover:bg-accent">İptal</button>
+        <button type="button" (click)="saveChanges()" [disabled]="!integrationForm.apiKey"
+                class="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
+          Değişiklikleri Kaydet
+        </button>
+    </footer>
+  </aside>
+</div>
