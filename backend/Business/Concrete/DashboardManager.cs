@@ -83,7 +83,7 @@ namespace Business.Concrete
             return new ActionItemsDto
             {
                 OrdersToShip = new CountMetricDto { Count = orders.Count(o => o.OrderStatusCode == (int)OrderStatus.PendingConfirmation), Label = "Kargolanacak Sipariş", Details = "Onay bekleyen veya hazırlanan siparişler." },
-                LowStockItems = new CountMetricDto { Count = products.Count(p => p.Stock < 10), Label = "Stoku Azalan Ürün", Details = "Stoğu 10'un altına düşen ürünler." },
+                LowStockItems = new CountMetricDto { Count = products.Count(p => p.Stock < 10), Label = "Stoğu Azalan Ürün", Details = "Stoğu 10'un altına düşen ürünler." },
                 PendingReviews = new CountMetricDto { Count = pendingReviews?.Count ?? 0, Label = "Onay Bekleyen Yorum", Details = "Müşterilerden gelen ve onaya bekleyen yeni yorumlar." }
             };
         }

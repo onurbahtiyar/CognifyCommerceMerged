@@ -82,6 +82,8 @@ namespace Business.DependencyRepository.Autofac
             builder.RegisterType<NotificationManager>().As<INotificationService>();
             builder.RegisterType<ScheduledJobManager>().As<IScheduledJobService>();
 
+            builder.RegisterType<EfMarketplaceIntegrationDal>().As<IMarketplaceIntegrationDal>();
+            builder.RegisterType<MarketplaceIntegrationManager>().As<IMarketplaceIntegrationService>();
 
             builder.Register(c =>
             {

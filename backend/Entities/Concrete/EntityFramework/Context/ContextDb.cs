@@ -51,6 +51,8 @@ public partial class ContextDb : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+    public virtual DbSet<MarketplaceIntegration> MarketplaceIntegrations { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Role>(entity =>
@@ -187,6 +189,15 @@ public partial class ContextDb : DbContext
                   .WithMany(p => p.Expenses)
                   .HasForeignKey(d => d.ExpenseCategoryId)
                   .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<MarketplaceIntegration>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.MarketplaceName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ApiKey).IsRequired();
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedDate).HasDefaultValueSql("getdate()");
         });
 
         OnModelCreatingPartial(modelBuilder);
