@@ -8,7 +8,7 @@ namespace GeminiExample
     {
         private static async Task Main(string[] args)
         {
-            var apiKey = "AIzaSyDYZ58z8AVjdZp4nKOAgnZR7VlecbF9hUU";
+            var apiKey = "GÜVENLİK-İÇİN-KALDIRILDI--ESKİ-API-İPTAL-EDİLDİ";
 
             var googleAI = new GoogleAi(apiKey);
 
